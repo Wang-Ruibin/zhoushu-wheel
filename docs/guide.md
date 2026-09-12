@@ -2,7 +2,7 @@
 
 **English** | [简体中文](zh-CN/guide.md)
 
-> The complete manual for readers who want every detail. For a quick introduction see the [README](../README.md); for architecture notes see the [handover doc](zh-CN/handover.md).
+> The complete manual for readers who want every detail. For a quick introduction see the [README](../README.md); for contribution conventions see the repo's [AGENTS.md](../AGENTS.md).
 
 ---
 

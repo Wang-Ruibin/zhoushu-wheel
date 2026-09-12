@@ -71,12 +71,12 @@ node _dev/run.js
 node _dev/t13_multi.js
 ```
 
-Please read these two docs first:
+Two things to know before you start:
 
-- **[Handover doc](docs/zh-CN/handover.md)** (Chinese): the module load order (fixed at the top of `index.html` — don't reorder), the `ZW` namespace & injection conventions, save-data structure.
-- **[AGENTS.md](AGENTS.md)**: code style (two-space indent, single quotes, no new globals beyond `ZW`), testing rules (behavior changes need regression tests; assert observable state via the `_dev/harness.js` virtual clock), commit & PR conventions (explain user-visible changes, list validation commands, attach before/after screenshots for layout or animation changes).
+- The load order of the `js/` modules is fixed at the top of `index.html` — don't reorder; modules talk only through the `ZW` namespace, no new globals.
+- Code style, testing rules, and commit & PR conventions live in [AGENTS.md](AGENTS.md).
 
-Issues and PRs are welcome; Section 10 of the guide lists some candidate features — so does your own imagination.
+Issues and PRs are welcome; Section 10 of the [guide](docs/guide.md#10-ideas-for-future-features) lists some candidate features — so does your own imagination.
 
 ## 📜 License & credits
 

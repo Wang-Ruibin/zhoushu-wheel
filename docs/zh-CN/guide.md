@@ -2,7 +2,7 @@
 
 [English](../guide.md) | **简体中文**
 
-> 这是给想深挖功能的读者准备的完整手册；快速了解项目请看 [README](../../README.zh-CN.md)，参与开发请看 [交接文档](handover.md)。
+> 这是给想深挖功能的读者准备的完整手册；快速了解项目请看 [README](../../README.zh-CN.md)，参与开发请看仓库根目录的 [AGENTS.md](../../AGENTS.md)。
 
 ---
 
