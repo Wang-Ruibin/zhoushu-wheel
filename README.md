@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Live demo](https://img.shields.io/badge/live-demo-gxnatri.top-8A2BE2)](https://gxnatri.top/)
 
-[🚀 Play now](https://gxnatri.top/) · [📖 Full guide](docs/guide.md) · [🛠️ Get involved](#get-involved)
+[🚀 Play now](https://gxnatri.top/) · [🛠️ Get involved](#get-involved)
 
 **English** | [简体中文](README.zh-CN.md)
 
@@ -48,11 +48,11 @@ Every option can set "when picked, go to which wheel": unset options follow the 
 Wheels with grades (E- ~ EX) are auto-detected as attribute wheels; snap a radar chart any time to plot your morality, cursed energy, physique… When the flow passes it, it pops up for a 3-second look. Event-growth wheels raise the grades you've drawn — and the chart grows with them.
 
 ### Make it yours
-Create / duplicate / drag-reorder wheels; bulk-edit options (one per line, `name*weight` for weights); drag to wire branches; "remove after pick" for lucky draws; six palettes + light/dark themes + an independently colorable dharma wheel. More detail in the [full guide](docs/guide.md).
+Create / duplicate / drag-reorder wheels; bulk-edit options (one per line, `name*weight` for weights); drag to wire branches; "remove after pick" for lucky draws; six palettes + light/dark themes + an independently colorable dharma wheel.
 
 ## 📦 Your data stays yours
 
-Everything persists in your browser's localStorage, with **one-click JSON backup** and import for moving devices. Optionally grant the `转盘/` folder and the app **writes your edits back to the data files** (one `.js` per wheel — editable in any text editor, refresh to apply). Why `.js` instead of `.json`? Local pages opened by double-click can't fetch local JSON; see [guide §2](docs/guide.md#2-wheel-data-files-one-file-per-wheel).
+Everything persists in your browser's localStorage, with **one-click JSON backup** and import for moving devices. Optionally grant the `转盘/` folder and the app **writes your edits back to the data files** — one `.js` per wheel, editable in any text editor, refresh to apply, with the format documented in the files' own comments (it's `.js` rather than `.json` because a local page opened by double-click can't fetch local JSON, but it can load local scripts).
 
 <a id="get-involved"></a>
 
@@ -76,7 +76,7 @@ Two things to know before you start:
 - The load order of the `js/` modules is fixed at the top of `index.html` — don't reorder; modules talk only through the `ZW` namespace, no new globals.
 - Code style, testing rules, and commit & PR conventions live in [AGENTS.md](AGENTS.md).
 
-Issues and PRs are welcome; Section 10 of the [guide](docs/guide.md#10-ideas-for-future-features) lists some candidate features — so does your own imagination.
+Issues and PRs are welcome — if there's a feature you want, just say so.
 
 ## 📜 License & credits
 
