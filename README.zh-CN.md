@@ -80,7 +80,7 @@ node _dev/t13_multi.js
 
 ## 📜 许可证与内容来源
 
-代码以 [MIT](LICENSE) 开源（Copyright (c) 2026 Wang-Ruibin）。转盘内容与扇区比例设计来自 B 站 UP 主**毓彧庾**的《咒术转盘》合集（[BV1F1b36VE6K](https://www.bilibili.com/video/BV1F1b36VE6K) 等），本项目为非商业粉丝再创作；法轮齿轮音效取自 B 站「魔虚罗音效素材」（[BV1KF3S62EaK](https://www.bilibili.com/video/BV1KF3S62EaK)）0–3 秒并内嵌于代码。《咒术回战》及相关名称版权归 芥見下々 / 集英社 所有，本项目与其无关。
+代码以 [MIT](LICENSE) 开源（Copyright (c) 2026 83719561255chyu-byte）。转盘内容与扇区比例设计来自 B 站 UP 主**毓彧庾**的《咒术转盘》合集（[BV1F1b36VE6K](https://www.bilibili.com/video/BV1F1b36VE6K) 等），本项目为非商业粉丝再创作；法轮齿轮音效取自 B 站「魔虚罗音效素材」（[BV1KF3S62EaK](https://www.bilibili.com/video/BV1KF3S62EaK)）0–3 秒并内嵌于代码。《咒术回战》及相关名称版权归 芥見下々 / 集英社 所有，本项目与其无关。
 
 ---
 
