@@ -1,0 +1,14 @@
+# 统一换行符：仓库里一律存 LF，检出到 Windows 时按需还原成 CRLF。
+# 不这么配的话，中文文件 + Windows 很容易出现"整个文件都变了"的假 diff。
+* text=auto eol=lf
+
+# 这些是二进制，别动
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.mp3 binary
+*.woff binary
+*.woff2 binary

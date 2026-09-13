@@ -1,0 +1,3677 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#F3EFE4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>咒术转盘</title>
+<style>
+:root{
+  --bg:#E9DFC8; --paper:#FBF6E9; --surf:#FBF6E9; --pill:#F7F0DE; --btn:#F3EBD8; --sunken:#F3EBD8;
+  --ink:#2A241C; --ink-2:#4A4136; --muted:#8B7C65; --accent:#B23A2F; --accent-soft:rgba(178,58,47,.12);
+  --line:rgba(70,56,34,.20); --line-soft:rgba(70,56,34,.10); --seal:#B23A2F;
+  --w-ring:#FBF6E9; --w-hub:#F7F0DE; --w-pointer:#F7F0DE; --w-sep:rgba(251,246,233,.88);
+  --shadow:0 12px 30px rgba(120,104,75,.18);
+  --shadow-1:0 1px 0 rgba(120,100,70,.10);
+  --shadow-2:0 1px 0 rgba(120,100,70,.10), 0 10px 22px rgba(112,92,62,.16);
+  --shadow-3:0 -2px 0 rgba(120,100,70,.08), 0 -18px 44px rgba(84,66,42,.24);
+  --font-hand:"Xingkai SC","Kaiti SC",KaiTi,STKaiti,"Songti SC","Noto Serif SC",serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --paper-noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.32'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+[data-theme="dark"]{
+  --bg:#17140F; --paper:#221E17; --surf:#221E17; --pill:#2A2419; --btn:#2A2419; --sunken:#2A2419;
+  --ink:#EFE5D2; --ink-2:#CFC2A8; --muted:#9C8D75; --accent:#E07A5F; --accent-soft:rgba(224,122,95,.16);
+  --line:rgba(240,226,200,.18); --line-soft:rgba(240,226,200,.09); --seal:#C4503C;
+  --w-ring:#2A2419; --w-hub:#17140F; --w-pointer:#17140F; --w-sep:rgba(23,20,15,.6);
+  --shadow:0 12px 30px rgba(0,0,0,.55);
+  --shadow-1:0 1px 0 rgba(0,0,0,.3);
+  --shadow-2:0 1px 0 rgba(0,0,0,.35), 0 10px 22px rgba(0,0,0,.5);
+  --shadow-3:0 -2px 0 rgba(0,0,0,.4), 0 -18px 44px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg); color:var(--ink); overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  transition:background .2s,color .2s;
+}
+input,textarea,select,button{font-family:inherit;font-size:inherit;color:inherit}
+.app{
+  height:100vh; height:100dvh; max-width:600px; margin:0 auto; display:flex; flex-direction:column;
+  padding:calc(env(safe-area-inset-top) + 10px) 16px calc(env(safe-area-inset-bottom) + 14px);
+  user-select:none; -webkit-user-select:none;
+}
+input,textarea{user-select:text;-webkit-user-select:text}
+
+/* ---------- 顶栏 ---------- */
+.topbar{display:flex;justify-content:center;align-items:center;min-height:44px;flex:0 0 auto}
+.title-pill{
+  display:inline-flex;align-items:center;gap:8px;max-width:86%;
+  background:var(--pill);border:0;border-radius:999px;padding:9px 16px;
+  font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;
+  transition:transform .15s, background .2s;
+}
+.title-pill:active{transform:scale(.97)}
+.title-pill .pname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.title-pill .pico{display:inline-flex;color:var(--muted)}
+.title-pill .chev{opacity:.7}
+
+/* ---------- 舞台 ---------- */
+.stage{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.result{
+  height:clamp(58px,13vw,70px);line-height:clamp(58px,13vw,70px);font-size:clamp(30px,9.4vw,46px);font-weight:700;letter-spacing:.04em;
+  max-width:96%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;
+  color:var(--ink);cursor:pointer;
+}
+.result.small{font-size:clamp(22px,6.6vw,32px)}   /* 只改字号，不改高度（否则转盘会上下跳） */
+.result.rolling{color:var(--muted);opacity:.75}
+.result.pop{animation:pop .55s cubic-bezier(.2,1.7,.4,1)}
+@keyframes pop{0%{transform:scale(.72);opacity:.2}60%{transform:scale(1.06)}100%{transform:scale(1)}}
+.wheel-wrap{position:relative;flex:0 0 auto;filter:drop-shadow(0 10px 22px rgba(120,104,75,.18))}
+[data-theme="dark"] .wheel-wrap{filter:drop-shadow(0 10px 22px rgba(0,0,0,.55))}
+#wheel{width:100%;height:100%;display:block;touch-action:manipulation;cursor:pointer}
+.wheel-wrap{transition:transform .12s}
+.wheel-wrap:active{transform:scale(.986)}
+body.spinning #wheel{cursor:default}
+.ctrl-hint{
+  text-align:center;font-size:12.5px;color:var(--muted);letter-spacing:.08em;
+  font-family:var(--font-hand);user-select:none;pointer-events:none;
+}
+.cdot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px;box-shadow:0 0 0 1px rgba(0,0,0,.12) inset}
+.hint.warn{color:var(--accent);border-color:rgba(178,58,47,.35)}
+
+/* ---------- 底部控制 ---------- */
+.controls{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;padding:0 18px;
+}
+.round{
+  width:46px;height:46px;border-radius:50%;border:0;background:var(--btn);color:var(--muted);
+  display:grid;place-items:center;cursor:pointer;transition:transform .15s,color .2s;
+}
+.round:active{transform:scale(.94)}
+.round:hover{color:var(--ink)}
+.spin-btn{
+  height:54px;border-radius:999px;border:0;background:var(--btn);color:var(--accent);
+  font-size:17px;font-weight:700;letter-spacing:.14em;text-indent:.14em;cursor:pointer;
+  box-shadow:0 2px 10px rgba(150,130,100,.10);transition:transform .15s,color .2s;
+}
+.spin-btn:active{transform:scale(.985)}
+.spin-btn:disabled{color:var(--muted);cursor:default}
+.spin-btn:disabled:active{transform:none}
+
+/* ---------- 遮罩 / 面板 ---------- */
+.overlay{
+  position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(40,33,22,.36);opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.overlay.open{opacity:1;pointer-events:auto}
+.sheet{
+  width:min(100%,600px);min-width:0;max-width:100%;max-height:94dvh;background:var(--surf);border-radius:24px 24px 0 0;
+  display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -8px 40px rgba(0,0,0,.2);
+  transform:translateY(14px);transition:transform .26s cubic-bezier(.2,.8,.2,1);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.overlay.open .sheet{transform:translateY(0)}
+.sheet.full{height:92dvh}
+.sheet-head{display:flex;align-items:center;gap:8px;padding:12px 12px 8px;flex:0 0 auto}
+.sheet-title{flex:1;margin:0;font-size:15px;font-weight:600;text-align:center}
+.sheet-body{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 14px 20px}
+.icon-btn{border:0;background:transparent;color:var(--muted);width:36px;height:36px;border-radius:50%;display:grid;place-items:center;cursor:pointer}
+.icon-btn:hover{background:var(--sunken);color:var(--ink)}
+.tabs{flex:1;display:flex;background:var(--sunken);border-radius:999px;padding:4px;gap:4px}
+.tab{flex:1;border:0;background:transparent;color:var(--muted);border-radius:999px;padding:9px 6px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.18s}
+.tab.on{background:var(--surf);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+
+/* ---------- 列表与控件 ---------- */
+.sec-title{font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin:18px 4px 8px}
+.sec-title:first-child{margin-top:6px}
+.list{display:flex;flex-direction:column;gap:8px}
+.row{
+  display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:16px;padding:10px 10px;
+}
+.row.cur{outline:2px solid var(--accent);outline-offset:-2px}
+.wheel-row{flex-direction:column;align-items:stretch;gap:9px}
+.wheel-row .row-acts{justify-content:flex-end;flex-wrap:wrap}
+.wheel-row .row-acts .mini[data-act="use"]{margin-right:auto}
+.row-main{flex:1 1 auto;min-width:0}.row-main .sub{font-size:11.5px;color:var(--muted);margin-top:3px;padding-left:2px}
+.row-acts{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.opt-row{display:grid;grid-template-columns:32px 1fr 62px 30px 30px;gap:7px;align-items:center}
+.opt-row.off{opacity:.45}
+.his-row{display:flex;align-items:center;padding:11px 14px}
+.his-label{font-size:15px;font-weight:600}
+.pick-row{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:0;cursor:pointer;
+  background:var(--bg);border-radius:16px;padding:15px 16px;font-size:15.5px;font-weight:600;text-align:left;
+}
+.pick-row.on{background:var(--accent);color:#fff}
+.pick-row em{font-style:normal;font-size:12px;color:var(--muted);font-weight:500}
+.pick-row.on em{color:rgba(255,255,255,.8)}
+input[type=text],input:not([type]),.name-input,.opt-input,.w-input,.ta{
+  width:100%;background:var(--surf);border:1px solid var(--line);border-radius:11px;
+  padding:9px 11px;font-size:14px;color:var(--ink);outline:none;transition:border-color .15s;
+}
+.name-input{font-size:15px;font-weight:600;padding:8px 10px}
+.opt-input{padding:8px 10px}
+.w-input{padding:8px 6px;text-align:center;font-size:13px}
+.opt-row > *,.row-main,.row-switch > *,.tools > *{min-width:0}
+.name-input,.opt-input,.w-input{min-width:0}
+input:focus,.ta:focus{border-color:var(--accent)}
+.ta{min-height:170px;resize:vertical;line-height:1.7;font-size:14px}
+input[type=color]{
+  -webkit-appearance:none;appearance:none;border:0;padding:0;width:30px;height:30px;border-radius:10px;
+  background:transparent;cursor:pointer;overflow:hidden;
+}
+input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+input[type=color]::-webkit-color-swatch{border:1px solid var(--line);border-radius:10px}
+.mini{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;border:0;cursor:pointer;
+  background:var(--sunken);color:var(--ink);border-radius:11px;padding:8px 11px;font-size:12.5px;font-weight:600;
+  min-height:32px;
+}
+.mini:hover{filter:brightness(.97)}
+.mini.on{background:var(--accent);color:#fff}
+.mini.danger{color:var(--accent)}
+.mini[disabled]{opacity:.34;cursor:default}
+.mini svg{width:15px;height:15px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;cursor:pointer;
+  background:var(--accent);color:#fff;border-radius:14px;padding:13px 16px;font-size:14.5px;font-weight:700;
+}
+.btn.ghost{background:var(--sunken);color:var(--ink)}
+.btn.block{width:100%;margin-top:12px}
+.btn.danger{background:var(--accent)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+.hint{font-size:12px;line-height:1.7;color:var(--muted);margin:10px 4px}
+.hint b{color:var(--ink)}
+.empty{padding:26px 10px;text-align:center;color:var(--muted);font-size:13.5px}
+.row-switch{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg);
+  border-radius:14px;padding:12px 14px;font-size:14px;margin-bottom:8px;cursor:pointer;
+}
+.row-switch input[type=checkbox]{display:none}
+.row-switch i{
+  flex:0 0 auto;width:44px;height:26px;border-radius:999px;background:rgba(130,120,100,.3);position:relative;transition:.2s;
+}
+.row-switch i::after{
+  content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);transition:.2s;
+}
+.row-switch input:checked + i{background:var(--accent)}
+.row-switch input:checked + i::after{transform:translateX(18px)}
+.row-switch input[type=range]{width:130px;max-width:42%;accent-color:var(--accent)}
+.row-switch select{
+  border:1px solid var(--line);background:var(--surf);border-radius:10px;padding:7px 9px;font-size:13.5px;outline:none;
+  max-width:58%;flex:0 1 auto;
+}
+.row-switch em{font-style:normal;color:var(--muted);font-size:12.5px}
+.seg{display:flex;gap:7px;flex-wrap:wrap}
+.seg-btn{
+  border:0;cursor:pointer;background:var(--bg);color:var(--muted);border-radius:11px;padding:9px 13px;
+  font-size:13px;font-weight:600;
+}
+.seg-btn.on{background:var(--accent);color:#fff}
+
+/* ---------- 分支流程 ---------- */
+.flow-bar{display:flex;align-items:center;gap:8px;margin:2px 0 6px;flex:0 0 auto}
+.flow-bar[hidden]{display:none}
+.flow-reset{
+  flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:0;background:var(--btn);color:var(--muted);
+  display:grid;place-items:center;cursor:pointer;
+}
+.flow-reset svg{width:15px;height:15px}
+.flow-strip{flex:1 1 auto;display:flex;align-items:center;gap:4px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+.flow-strip::-webkit-scrollbar{display:none}
+.flow-chip{
+  flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;border:0;background:var(--btn);color:var(--ink);
+  border-radius:999px;padding:5px 10px;font-size:11.5px;cursor:pointer;
+}
+.flow-chip b{font-weight:600}
+.flow-chip i{font-style:normal;color:var(--accent);font-weight:700}
+.flow-chip.cur{background:var(--accent);color:#fff;font-weight:600}
+.flow-arrow{color:var(--muted);font-size:11px;flex:0 0 auto}
+.flow-next{
+  flex:0 0 auto;font-size:11.5px;color:var(--accent);font-weight:700;background:rgba(210,69,58,.12);
+  border-radius:999px;padding:5px 10px;max-width:36%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  border:0;cursor:pointer;font-family:inherit;
+}
+.stage{transition:opacity .22s,transform .22s}
+.stage.fading{opacity:0;transform:scale(.96)}
+
+.node{border:1px solid var(--line);border-radius:16px;background:var(--bg);padding:9px;margin:8px 0}
+.node-head{display:flex;align-items:center;gap:7px;touch-action:pan-y}
+.node-name{flex:1 1 auto;min-width:0;font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{flex:0 0 auto;font-size:10.5px;color:var(--muted);background:var(--sunken);border-radius:999px;padding:3px 7px}
+.drag-handle{color:var(--muted);cursor:grab;touch-action:none;display:grid;place-items:center;width:20px;height:20px}
+.drag-handle svg{width:15px;height:15px}
+.branches{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.branch{display:flex;align-items:center;gap:6px;padding-left:7px;border-left:2px solid var(--line);min-height:30px}
+.branch .b-label{flex:1 1 auto;min-width:0;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.branch.def .b-label{color:var(--muted)}
+.slot{
+  flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;max-width:58%;cursor:pointer;
+  border:1px dashed rgba(120,105,80,.42);border-radius:10px;padding:5px 8px;font-size:11.5px;color:var(--muted);
+}
+.slot .slot-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot:not(.empty){border-style:solid;border-color:rgba(210,69,58,.4);color:var(--accent);background:rgba(210,69,58,.07);font-weight:600}
+.slot.hot{outline:2px solid var(--accent);outline-offset:1px;background:rgba(210,69,58,.18)}
+.slot-x{border:0;background:transparent;color:inherit;opacity:.55;cursor:pointer;font-size:13px;line-height:1;padding:0 1px}
+.exp{flex:0 0 auto;width:22px;height:22px;border:0;border-radius:7px;background:var(--sunken);color:var(--muted);cursor:pointer;font-size:10px;line-height:1}
+.exp-sp{flex:0 0 auto;width:22px}
+.subtree{margin-left:10px;border-left:2px dashed var(--line);padding-left:8px}
+.node-ref{font-size:11.5px;color:var(--muted);padding:5px 8px;background:var(--sunken);border-radius:9px;margin:6px 0;display:inline-block}
+.chip-row{display:flex;gap:7px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}
+.chip-row::-webkit-scrollbar{display:none}
+.chip{
+  flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;background:var(--surf);border:1px solid var(--line);
+  border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:600;cursor:grab;touch-action:none;
+  user-select:none;-webkit-user-select:none;
+}
+.drag-ghost{
+  position:fixed;left:0;top:0;z-index:200;pointer-events:none;background:var(--accent);color:#fff;
+  border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:700;box-shadow:0 8px 20px rgba(0,0,0,.28);opacity:.94;
+}
+body.dragging{cursor:grabbing}
+.opt-card{background:var(--bg);border-radius:16px;padding:8px 9px}
+.opt-card.off{opacity:.45}
+.opt-line{display:grid;grid-template-columns:32px 1fr 54px 30px 30px;gap:7px;align-items:center}
+.next-btn{
+  margin-top:7px;width:100%;display:flex;align-items:center;gap:6px;border:1px dashed rgba(120,105,80,.35);
+  background:transparent;color:var(--muted);border-radius:10px;padding:6px 9px;font-size:11.5px;cursor:pointer;text-align:left;
+}
+.next-btn.set{border-style:solid;border-color:rgba(210,69,58,.35);color:var(--accent);background:rgba(210,69,58,.07);font-weight:600}
+.next-btn .nx-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nx-arrow{font-weight:700;flex:0 0 auto}
+
+/* ---------- 对话框 / toast ---------- */
+.confirm-overlay{align-items:center;z-index:60;background:rgba(40,33,22,.42)}
+.dialog{
+  width:min(84vw,340px);background:var(--surf);border-radius:20px;padding:20px 18px 14px;
+  box-shadow:0 18px 50px rgba(0,0,0,.28);transform:scale(.94);transition:transform .2s;
+}
+.overlay.open .dialog{transform:scale(1)}
+.dialog h4{margin:0 0 8px;font-size:16.5px;text-align:center}
+.dialog p{margin:0 0 12px;font-size:13.5px;line-height:1.65;color:var(--muted);text-align:center}
+.dialog .c-input{margin-bottom:12px;text-align:center}
+.c-acts{display:flex;gap:10px}
+.c-acts .btn{flex:1}
+.c-acts .btn.ghost{background:var(--sunken);color:var(--ink)}
+.toast{
+  position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 92px);transform:translate(-50%,14px);
+  background:rgba(38,32,24,.94);color:#fff;border-radius:14px;padding:11px 16px;font-size:13.5px;
+  display:flex;align-items:center;gap:12px;max-width:88vw;z-index:70;opacity:0;pointer-events:none;
+  transition:opacity .22s,transform .22s;box-shadow:0 8px 24px rgba(0,0,0,.25);
+}
+[data-theme="dark"] .toast{background:rgba(240,236,228,.95);color:#1b1a1e}
+.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast-act{
+  border:0;background:transparent;color:#F6B99B;font-weight:700;font-size:13.5px;cursor:pointer;padding:0 2px;white-space:nowrap;
+}
+[data-theme="dark"] .toast-act{color:var(--accent)}
+
+/* ============================================================
+   纸张 · 手绘皮肤（覆盖上面的基础样式）
+   ============================================================ */
+body{
+  background-color:var(--bg);
+  background-image:var(--paper-noise), radial-gradient(135% 85% at 50% -18%, rgba(255,255,255,.55), transparent 62%);
+  background-repeat:repeat, no-repeat;
+  background-attachment:fixed, fixed;
+  font-family:var(--font-body);
+}
+[data-theme="dark"] body{
+  background-image:var(--paper-noise), radial-gradient(135% 85% at 50% -18%, rgba(255,232,196,.07), transparent 62%);
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:2;
+  box-shadow:inset 0 0 110px rgba(120,95,58,.10);
+}
+[data-theme="dark"] body::after{box-shadow:inset 0 0 130px rgba(0,0,0,.55)}
+
+/* 手绘感圆角与墨线 */
+.row,.opt-card,.node,.pick-row,.row-switch,.dialog,.slot,.next-btn,.mini,.seg,.chip,.node-ref,.his-row,.tabs,.tab,.flow-chip,.flow-next,.flow-reset,.branch{
+  border-radius:11px 14px 12px 15px / 14px 11px 15px 12px;
+}
+.sheet,.dialog,.node,.opt-card,.pick-row,.row,.row-switch,.toast,.node-ref,.his-row{
+  border:1.2px solid var(--line);
+}
+.row,.opt-card,.row-switch,.node,.pick-row,.his-row{background:var(--paper)}
+.node,.opt-card{box-shadow:var(--shadow-1)}
+input[type=text],input:not([type]),.name-input,.opt-input,.w-input,.ta,.row-switch select{
+  background:#FFFDF6;border:1px solid var(--line-soft);
+}
+[data-theme="dark"] input[type=text],[data-theme="dark"] input:not([type]),[data-theme="dark"] .name-input,
+[data-theme="dark"] .opt-input,[data-theme="dark"] .w-input,[data-theme="dark"] .ta,[data-theme="dark"] .row-switch select{
+  background:#1B1813;
+}
+.mini,.seg-btn{background:var(--btn);border:1.1px solid var(--line-soft)}
+.mini:hover,.seg-btn:hover{background:var(--sunken)}
+.mini.danger{border-color:rgba(178,58,47,.28)}
+/* 选项卡片里的一排小按钮：格子放宽、图标放大，手指也好点 */
+.opt-card .opt-line{grid-template-columns:32px 1fr 48px 34px 34px;gap:6px}
+.opt-card .mini{padding:5px 0;min-height:34px;justify-content:center}
+.opt-card .mini svg{width:19px;height:19px}
+.opt-card .mini[data-act="autoColor"]{font-size:13px;font-weight:700}
+.mini svg{width:16px;height:16px}
+.btn{border:1.2px solid rgba(120,40,30,.28);box-shadow:0 3px 0 rgba(150,70,50,.22);background:var(--accent);color:#FDF7EC}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(150,70,50,.22)}
+.btn.ghost{background:var(--paper);color:var(--ink);border-color:var(--line);box-shadow:0 2px 0 rgba(120,100,70,.12)}
+.seg{background:var(--btn);border:1.1px solid var(--line-soft)}
+.seg-btn.on{background:var(--accent);border-color:rgba(120,40,30,.3);color:#FDF7EC}
+/* 流程开关分组：总开关 + 两个互不影响的子开关 */
+.switch-group{
+  background:var(--paper);border:1.2px solid var(--line);padding:11px 12px;
+  border-radius:11px 14px 12px 15px / 14px 11px 15px 12px;box-shadow:var(--shadow-1);
+}
+.switch-group > .row-switch{background:transparent;border:0;padding:0;margin:0}
+.sub-switches{
+  margin:11px 0 0 5px;padding-left:12px;border-left:2px dashed var(--line);
+  display:flex;flex-direction:column;gap:10px;
+}
+.sub-switches .row-switch{background:transparent;border:0;padding:0;margin:0}
+.switch-group.off .sub-switches{opacity:.4;pointer-events:none}
+.mode-line{
+  margin:9px 0 2px;padding:9px 12px;font-size:12.5px;line-height:1.55;font-family:var(--font-hand);
+  background:var(--accent-soft);color:var(--accent);
+  border-radius:11px 14px 12px 15px / 14px 11px 15px 12px;
+}
+.mode-line.off{background:var(--sunken);color:var(--muted)}
+/* 转盘列表：选择 + 管理合并成一页，点名字进「选项内容」 */
+.wheel-open{
+  display:flex;align-items:center;gap:9px;flex:1 1 auto;min-width:0;
+  border:0;background:transparent;cursor:pointer;padding:1px 2px 3px;text-align:left;font-family:inherit;color:inherit;
+}
+.wheel-top{display:flex;align-items:center;gap:7px;width:100%}
+/* 整框可点 + 按住拖动排序 */
+.list{position:relative}
+.wheel-row{cursor:pointer;-webkit-touch-callout:none}
+.wheel-row.dragging{
+  position:relative;z-index:6;background:var(--paper);cursor:grabbing;
+  box-shadow:0 14px 28px rgba(96,74,44,.28), 0 2px 0 rgba(120,100,70,.12);
+  border-color:rgba(178,58,47,.4);transition:none;
+}
+.wheel-row.dragging .wheel-open,.wheel-row.dragging .bchip,.wheel-row.dragging .mini{pointer-events:none}
+body.row-dragging,body.row-dragging *{cursor:grabbing !important}
+.drop-line{
+  position:absolute;left:4px;right:4px;height:3px;border-radius:3px;z-index:7;pointer-events:none;
+  background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);
+}
+.wheel-row.is-branch{background-image:linear-gradient(rgba(178,58,47,.055),rgba(178,58,47,.055))}
+.bchip{
+  flex:0 0 auto;border:1.1px dashed var(--line);background:transparent;color:var(--muted);
+  border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;
+}
+.bchip.on{background:var(--accent);border-style:solid;border-color:rgba(120,40,30,.3);color:#FDF7EC}
+.bchip:active{transform:translateY(1px)}
+.badge.branch{background:var(--accent);color:#FDF7EC}
+/* 列表里插着的属性维度图 */
+.chart-item{border-left:3px solid var(--accent);background-image:linear-gradient(rgba(178,58,47,.05),rgba(178,58,47,.05))}
+/* 数据文件同步状态条 */
+.filestat{
+  display:flex;align-items:center;gap:10px;justify-content:space-between;
+  background:var(--paper);border:1.2px dashed var(--line);padding:8px 11px;margin:10px 0 2px;
+  border-radius:11px 14px 12px 15px / 14px 11px 15px 12px;font-size:12px;color:var(--muted);
+}
+.filestat.on{border-style:solid;border-color:rgba(178,58,47,.3);color:var(--ink-2)}
+.filestat b{color:var(--ink)}
+.filestat .mini{flex:0 0 auto}
+.wdot{flex:0 0 auto;width:12px;height:12px;border-radius:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.wname{
+  flex:1 1 auto;min-width:0;font-family:var(--font-hand);font-size:15.5px;font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.wmeta{flex:0 0 auto;font-size:11.5px;color:var(--muted)}
+.wheel-open:hover .wname{color:var(--accent)}
+.wheel-open:active{transform:translateY(1px)}
+.edit-head{
+  display:flex;align-items:center;gap:8px;background:var(--paper);border:1.2px solid var(--line);
+  padding:6px 10px;margin-bottom:10px;border-radius:11px 14px 12px 15px / 14px 11px 15px 12px;
+  box-shadow:var(--shadow-1);
+}
+.edit-head .eh-label{flex:0 0 auto;font-size:12px;color:var(--muted)}
+.edit-head select{
+  flex:1 1 auto;min-width:0;border:0;background:transparent;outline:none;
+  font-family:var(--font-hand);font-size:15px;font-weight:600;color:var(--ink);
+}
+.sheet{background:var(--paper);background-image:var(--paper-noise);box-shadow:var(--shadow-3)}
+.overlay{background:rgba(52,40,24,.40);-webkit-backdrop-filter:blur(3px) saturate(.92);backdrop-filter:blur(3px) saturate(.92)}
+.sheet-head{border-bottom:1px dashed var(--line-soft);padding-bottom:10px}
+.tabs{background:var(--btn);border:1.1px solid var(--line-soft)}
+.tab.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 0 rgba(120,100,70,.12)}
+.row-switch i{background:rgba(120,100,70,.32);border:1px solid var(--line-soft)}
+.row-switch input:checked + i{background:var(--accent);border-color:rgba(120,40,30,.3)}
+.mini.on{background:var(--accent);color:#FDF7EC;border-color:rgba(120,40,30,.3)}
+.slot{border-color:rgba(120,100,70,.45)}
+.slot:not(.empty){border-color:rgba(178,58,47,.45);background:var(--accent-soft);color:var(--accent)}
+.chip{background:var(--paper);border:1.2px solid var(--line);box-shadow:0 1px 0 rgba(120,100,70,.10)}
+.chip:active{transform:scale(.97)}
+.drag-ghost{background:var(--accent);box-shadow:0 6px 0 rgba(120,40,30,.25), 0 12px 24px rgba(80,60,30,.28)}
+.toast{background:rgba(38,30,20,.95);border-color:rgba(255,255,255,.10)}
+.sec-title{
+  font-family:var(--font-hand);font-size:14px;letter-spacing:.08em;color:var(--ink-2);
+  border-bottom:1px dashed var(--line-soft);padding-bottom:5px;
+}
+.sheet-title,.node-name,.his-label,.pick-row > span:first-child,.result,.dialog h4{
+  font-family:var(--font-hand);font-weight:600;letter-spacing:.03em;
+}
+.result{font-weight:600;letter-spacing:.04em;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+[data-theme="dark"] .result{text-shadow:0 1px 0 rgba(0,0,0,.4)}
+.result.rolling{color:var(--ink-2);opacity:.62;text-shadow:none}
+
+/* 印章 */
+.seal{
+  position:absolute;left:0;top:50%;width:34px;height:34px;margin-top:-17px;transform:rotate(-7deg);
+  display:grid;place-items:center;background:var(--seal);color:#FDF6E7;
+  border-radius:6px 8px 5px 8px / 8px 5px 8px 6px;font-family:var(--font-hand);font-size:19px;font-weight:700;
+  box-shadow:0 1px 0 rgba(100,40,25,.35), inset 0 0 0 1.5px rgba(255,246,231,.42);
+  opacity:.93;pointer-events:none;
+}
+.topbar{position:relative}
+.title-pill{max-width:78%;border:1.2px solid var(--line);box-shadow:0 1px 0 rgba(120,100,70,.10);background:var(--paper)}
+.title-pill:active{transform:scale(.97) rotate(-.4deg)}
+.round{background:var(--btn);border:1.2px solid var(--line);box-shadow:0 2px 0 rgba(120,100,70,.12);color:var(--ink-2)}
+.round:hover{background:var(--paper);color:var(--accent)}
+.round:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(120,100,70,.12)}
+.spin-btn{
+  background:var(--paper);color:var(--accent);border:1.5px solid var(--accent);
+  box-shadow:0 3px 0 rgba(178,58,47,.20);letter-spacing:.16em;
+}
+.spin-btn:hover{background:var(--accent-soft)}
+.spin-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(178,58,47,.20)}
+.spin-btn:disabled{color:var(--muted);border-color:var(--line);box-shadow:none;background:var(--btn)}
+.flow-bar{
+  border-bottom:1px dashed var(--line-soft);padding-bottom:7px;margin-bottom:8px;
+}
+.flow-chip{background:var(--paper);border:1.1px solid var(--line-soft)}
+.flow-chip.cur{background:var(--accent);border-color:rgba(120,40,30,.3);color:#FDF7EC}
+.flow-reset{background:var(--paper);border:1.1px solid var(--line-soft);color:var(--ink-2)}
+.flow-next{background:var(--accent-soft);border:1.1px dashed rgba(178,58,47,.45);color:var(--accent)}
+.chart-wrap{width:100%;max-width:390px;margin:4px auto 0;aspect-ratio:1/1}
+.chart-wrap canvas{width:100%;height:100%;display:block}
+/* 维度图：面板居中、图尽量大 */
+.overlay.center{align-items:center}
+.overlay.center .sheet{border-radius:22px;max-height:92dvh;box-shadow:0 14px 60px rgba(0,0,0,.28)}
+.overlay.center.closing .sheet{transform:translateY(24px) scale(.98);opacity:0}
+.sheet.chart-sheet .sheet-body{display:flex;align-items:center;justify-content:center;padding:2px 10px 14px;overflow:hidden}
+.sheet.chart-sheet .chart-wrap{max-width:min(620px, 78dvh);margin:0 auto}
+@media (max-height:640px){ .sheet.chart-sheet .chart-wrap{max-width:min(560px, 72dvh)} }
+.chart-meta{text-align:center;font-size:12.5px;color:var(--muted);margin:6px 0 12px}
+.chart-meta b{color:var(--accent);font-size:15px;font-family:var(--font-hand)}
+.flow-next.paused{background:var(--sunken);color:var(--muted);border-color:var(--line);border-style:solid}
+.flow-collapsed{
+  display:inline-flex;align-items:center;gap:6px;border:1.1px dashed var(--line);background:var(--paper);
+  color:var(--ink-2);border-radius:11px 14px 12px 15px / 14px 11px 15px 12px;padding:6px 11px;
+  font-size:12px;font-weight:600;cursor:pointer;flex:0 0 auto;
+}
+.flow-collapsed svg{width:14px;height:14px;color:var(--accent)}
+.flow-bar.collapsed .flow-strip{display:none}
+.flow-bar.collapsed .flow-reset{display:none}
+canvas{filter:none}
+.wheel-wrap{filter:drop-shadow(0 8px 0 rgba(120,100,70,.10)) drop-shadow(0 16px 26px rgba(100,80,50,.20))}
+[data-theme="dark"] .wheel-wrap{filter:drop-shadow(0 8px 0 rgba(0,0,0,.35)) drop-shadow(0 16px 26px rgba(0,0,0,.55))}
+
+/* 焦点可见 & 动效 */
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+.sheet:focus{outline:none}
+@keyframes sheetUp{from{transform:translateY(30px);opacity:.5}to{transform:translateY(0);opacity:1}}
+@keyframes innerPush{from{transform:translateX(26px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes innerPop{from{transform:translateX(-22px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes innerSwap{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+.overlay.open .sheet{animation:sheetUp .26s cubic-bezier(.2,.8,.2,1)}
+.overlay.closing{pointer-events:none}
+.overlay.closing .sheet{transform:translateY(100%);opacity:.4;transition:transform .2s cubic-bezier(.4,0,1,1),opacity .2s}
+.sheet-inner{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;height:100%}
+.sheet-inner.push{animation:innerPush .24s cubic-bezier(.2,.8,.2,1)}
+.sheet-inner.pop{animation:innerPop .22s cubic-bezier(.2,.8,.2,1)}
+.sheet-inner.swap{animation:innerSwap .18s ease-out}
+.action-list{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+.action-row{
+  display:flex;align-items:center;gap:11px;width:100%;text-align:left;cursor:pointer;
+  background:var(--paper);border:1.2px solid var(--line);padding:13px 14px;font-size:15px;font-weight:600;
+  border-radius:11px 14px 12px 15px / 14px 11px 15px 12px;box-shadow:var(--shadow-1);
+  font-family:var(--font-hand);letter-spacing:.03em;
+}
+.action-row:hover{background:var(--sunken)}
+.action-row:active{transform:translateY(1px)}
+.action-row .ai{width:22px;display:grid;place-items:center;color:var(--accent);flex:0 0 auto}
+.action-row em{font-style:normal;color:var(--muted);font-size:12.5px;font-family:var(--font-body);margin-left:auto}
+.action-row.danger{color:var(--accent);border-color:rgba(178,58,47,.35)}
+.result-hero{
+  font-family:var(--font-hand);font-size:clamp(30px,10vw,46px);font-weight:600;text-align:center;
+  padding:6px 0 2px;word-break:break-all;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <span class="seal" aria-hidden="true">咒</span>
+    <button class="title-pill" id="btnSwitch" aria-label="切换或管理转盘" aria-haspopup="dialog">
+      <span class="pico" data-icon="menu"></span>
+      <span class="pname" id="wheelName">咒术转盘</span>
+      <span class="pico chev" data-icon="chevron"></span>
+    </button>
+  </header>
+  <div class="flow-bar" id="flowBar" hidden></div>
+
+  <main class="stage">
+    <div class="result" id="result" role="status" aria-live="polite" aria-atomic="true" title="点开结果操作">？</div>
+    <div class="wheel-wrap" id="wheelWrap"><canvas id="wheel"></canvas></div>
+  </main>
+
+  <footer class="controls">
+    <button class="round" id="btnPanel" title="设置与记录" aria-label="设置与记录" data-icon="sliders"></button>
+    <button class="round" id="btnEdit" title="编辑当前转盘选项" aria-label="编辑当前转盘选项" data-icon="edit"></button>
+  </footer>
+</div>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="面板">
+  <div class="sheet" id="sheet" tabindex="-1"></div>
+</div>
+
+<div class="overlay confirm-overlay" id="confirmOverlay">
+  <div class="dialog">
+    <h4 id="cTitle">提示</h4>
+    <p id="cDesc"></p>
+    <input class="c-input" id="cInput" type="text" hidden>
+    <div class="c-acts">
+      <button class="btn ghost" id="cCancel">取消</button>
+      <button class="btn" id="cOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="fileImport" accept=".json,application/json" hidden>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================== 基础工具 ============================== */
+const TAU = Math.PI * 2;
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
+const num = v => { const n = Number(v); return isFinite(n) ? n : 0; };
+const norm = a => { a %= TAU; return a < 0 ? a + TAU : a; };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const FONT = '-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+const WFONT = '"Xingkai SC","Kaiti SC",KaiTi,STKaiti,"Songti SC","Noto Serif SC",serif';
+
+const svg = (inner, w) => '<svg viewBox="0 0 24 24" width="' + (w || 20) + '" height="' + (w || 20) +
+  '" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+const ICONS = {
+  menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+  chevron:'<path d="M6 9.5l6 6 6-6"/>',
+  back:'<path d="M15 5l-7 7 7 7"/>',
+  close:'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  sliders:'<path d="M4 8h9M17 8h3M4 16h3M11 16h9"/><circle cx="15" cy="8" r="2.2"/><circle cx="9" cy="16" r="2.2"/>',
+  edit:'<path d="M4 20h4L18.5 9.5a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.6 6.4l4 4"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  trash:'<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l.9 12.5h9.2L17.5 7"/>',
+  copy:'<rect x="9" y="9" width="11" height="11" rx="2.6"/><path d="M15 5.6A2.6 2.6 0 0 0 12.4 3H6.6A3.1 3.1 0 0 0 3.5 6.1v5.8A2.6 2.6 0 0 0 6 14.5"/>',
+  up:'<path d="M12 19.5V5M6 11l6-6 6 6"/>',
+  down:'<path d="M12 4.5V19M6 13l6 6 6-6"/>',
+  download:'<path d="M12 4v10.5M7.5 10L12 14.5 16.5 10M5 19.5h14"/>',
+  upload:'<path d="M12 15V4.5M7.5 9L12 4.5 16.5 9M5 19.5h14"/>',
+  refresh:'<path d="M20 11.2A8 8 0 1 0 17.6 17"/><path d="M20.5 5v6h-6"/>',
+  shuffle:'<path d="M4 7h3.5l4 5 4 5H20M4 17h3.5l1.8-2.2M14.5 7H20M17.5 4.5L20 7l-2.5 2.5M17.5 14.5L20 17l-2.5 2.5"/>',
+  clock:'<circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.1 2"/>',
+  branch:'<path d="M7 4v6a4 4 0 0 0 4 4h5"/><circle cx="18" cy="14" r="2.2"/><path d="M7 20v-6"/>'
+};
+ICONS.drag = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="none">' +
+  '<circle cx="9.5" cy="6" r="1.5"/><circle cx="14.5" cy="6" r="1.5"/>' +
+  '<circle cx="9.5" cy="12" r="1.5"/><circle cx="14.5" cy="12" r="1.5"/>' +
+  '<circle cx="9.5" cy="18" r="1.5"/><circle cx="14.5" cy="18" r="1.5"/></svg>';
+const icon = n => svg(ICONS[n] || '', 20);
+
+/* ============================== 调色板 ============================== */
+const PALETTES = {
+  xuan:   { name:'宣纸',   s:40, l:62, hues:[6, 22, 42, 88, 148, 192, 214, 268, 320, 348] },
+  vivid:  { name:'鲜艳',   s:71, l:52, hues:[214,276,330,8,34,88,168,196,252,300,46,130] },
+  pastel: { name:'马卡龙', s:74, l:80, hues:[96,168,196,252,286,330,8,32,68,130] },
+  morandi:{ name:'莫兰迪', s:26, l:70, hues:[210,276,330,10,36,90,166,196,250,300] },
+  neon:   { name:'霓虹',   s:92, l:58, hues:[188,282,322,352,44,80,150,200,262,300] },
+  ink:    { name:'水墨',   s:14, l:82, hues:[220,262,300,340,20,60,120,180] }
+};
+function hslToHex(h, s, l){
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const to = x => Math.round(255 * clamp(x, 0, 1)).toString(16).padStart(2, '0');
+  return '#' + to(f(0)) + to(f(8)) + to(f(4));
+}
+function hexToRgb(hex){
+  let h = String(hex || '').trim().replace('#', '');
+  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  const n = parseInt(h, 16);
+  if (!isFinite(n)) return { r:255, g:255, b:255 };
+  return { r:(n >> 16) & 255, g:(n >> 8) & 255, b:n & 255 };
+}
+function colorOf(w, o, i){
+  if (o.color) return o.color;
+  const p = PALETTES[state.settings.palette] || PALETTES.vivid;
+  const hue = p.hues[i % p.hues.length] + Math.floor(i / p.hues.length) * 9;
+  return hslToHex(hue % 360, p.s, p.l);
+}
+function textOn(hex){
+  const c = hexToRgb(hex);
+  const L = (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) / 255;
+  return L > 0.66 ? 'rgba(44,40,34,.93)' : '#ffffff';
+}
+
+/* ============================== 数据 ============================== */
+const LS_KEY = 'zhoushu-wheel.v1';
+const HINT_KEY = 'zhoushu-wheel.hint';
+const BASE_ALL = 0.0001;
+const BASE_SETTINGS = {
+  palette:'xuan', theme:'light', sound:true, vibrate:true,
+  duration:4.2, rolling:true, autoFlip:false, historyLimit:50,
+  autoSave:true,      // 改动后自动写回「转盘」文件夹（需要授权过一次）
+  chartOnEnd:true,    // 流程结束时自动弹出属性维度图
+  chartColor:'zhu',   // 维度图配色（CHART_INKS 的 key）
+  wheelColor:'jin',   // 法轮配色（独立设置，默认赭金=黄铜）
+  wheelAlpha:0.40,    // 法轮透明度
+  spinFx:'bounce',    // 旋转的物理效果（SPIN_FX 的 key）
+  fromFiles:false     // 仅内部用：true = 每次打开都以文件覆盖
+};
+const STATE_VER = 3;
+const END = '__end__', STAY = '__stay__';
+const BASE_FLOW = { enabled:true, rootId:'', autoJump:true, autoSpin:false, delay:1.6, path:[], pendingId:'', retStack:[], paused:false };
+const BASE_WHEELS = [
+  { name:'穿越后的初始身份', labels:['咒术师','诅咒师','咒灵','咒骸','式神','咒具','魂穿原著角色','咒术高层','普通人'] },
+  { name:'穿越后的时间点',   labels:['怀玉时期','0卷时期','剧情开始时','涩谷事变时期','死灭回游时期','新宿决战时期','68年后·外传','平安时代（千年前）','400年前'] },
+  { name:'穿越后的地点',     opts:[['日本',40],['亚洲除日本其他地方',9],['北美洲',8],['欧洲',8],['澳洲',7],['非洲',6],['南美洲',5],['澳大利亚星人·自动刷',4]] },
+  { name:'穿越后的年龄',     opts:[['刚出生的婴儿',3],['11岁是小学生',12],['16岁未成年',10],['刚满18岁',7],['24大好青年',9],['30岁壮年巅峰期',10],['40岁中年人',9],['55岁过半百',16],['66岁老年人',10],['75古稀之年',10],['88岁耄耋之年',5],['99极限斗罗',3]] },
+  { name:'穿越后的性别',     opts:[['女',48],['男',40],['武装直升机',7],['不男不女',5]] },
+  { name:'穿越后的颜值',     opts:[['E（面目可憎）',16],['咒术回战看多了诞生的咒灵',4],['EX（咒术魅魔）',8],['SSS（倾国倾城）',10],['SS（沉鱼落雁）',12],['S（国色天香）',12],['A（花容月貌）',11],['B（眉清目秀）',9],['C（其貌不扬）',9],['D（尖嘴猴腮）',8]] },
+  { name:'道德水平',         opts:[['SS（光明磊落）',16],['SSS（高风亮节）',10],['EX（超凡入圣）',12],['E-（禽兽不如）',12],['E（丧心病狂）',11],['D（恬不知耻）',8],['C（见利忘义）',9],['B（见义勇为）',10],['A（安分守己）',10],['S（乐善好施）',10]] },
+  { name:'穿越后的术式天赋', labels:['无下限术式','十种影法术','咒灵操术','无为转变','赤血操术','投射咒法','构筑术式','复制术式','纯体术·无术式'] },
+  { name:'穿越后的金手指',   labels:['咒力量十倍','无限咒力','熟知全部剧情','随身咒具库','一次时间回溯','弱化版六眼','主角光环','系统面板','没有金手指'] },
+  { name:'最终结局',         labels:['成为最强','与挚友并肩','死在涩谷','被咒灵同化','苟到大结局','改写历史','成为咒灵王','回到原来的世界'] }
+];
+/* v3 新增的内置转盘（老存档升级时按名字补进来） */
+const V3_PRESETS = ['穿越后的地点', '穿越后的年龄', '穿越后的性别', '穿越后的颜值', '道德水平'];
+
+function makeOption(label, weight, color, next){
+  return { id:uid(), label:String(label == null ? '' : label), weight: weight == null ? 1 : num(weight),
+           color: color || null, next: next || '' };
+}
+function makeWheel(name, labels){
+  return { id:uid(), name:name, next:'', branch:false, grade:null, removeAfterPick:false, options:(labels || []).map(l => makeOption(l)) };
+}
+/* 内置转盘定义 → 运行时转盘（支持带权重的 opts） */
+function wheelFromDef(def){
+  return {
+    id:uid(), name:def.name, next:'', branch:!!def.branch, grade:(def.grade === true ? true : (def.grade === false ? false : null)),
+    removeAfterPick:false,
+    options: def.opts ? def.opts.map(p => makeOption(p[0], p[1])) : (def.labels || []).map(l => makeOption(l))
+  };
+}
+function seed(){
+  const s = {
+    version:STATE_VER, currentId:null,
+    wheels: BASE_WHEELS.map(wheelFromDef),
+    charts: [],
+    settings: Object.assign({}, BASE_SETTINGS),
+    history: [], flow: Object.assign({}, BASE_FLOW)
+  };
+  s.currentId = s.wheels[0].id;
+  const byName = n => s.wheels.filter(w => w.name === n)[0];
+  const link = (from, to) => { const a = byName(from), b = byName(to); if (a) a.next = b ? b.id : END; };
+  const branch = (wName, optLabel, toName) => {
+    const w = byName(wName), t = byName(toName);
+    if (!w || !t) return;
+    const o = w.options.filter(x => x.label === optLabel)[0];
+    if (o) o.next = t.id;
+  };
+  link('穿越后的初始身份', '穿越后的时间点');
+  link('穿越后的时间点', '穿越后的地点');
+  link('穿越后的地点', '穿越后的年龄');
+  link('穿越后的年龄', '穿越后的性别');
+  link('穿越后的性别', '穿越后的颜值');
+  link('穿越后的颜值', '道德水平');
+  link('道德水平', '穿越后的术式天赋');
+  link('穿越后的术式天赋', '穿越后的金手指');
+  link('穿越后的金手指', '最终结局');
+  const last = byName('最终结局'); if (last) last.next = END;
+  // 示例分支：不同选项去不同转盘
+  branch('穿越后的初始身份', '魂穿原著角色', '穿越后的术式天赋');
+  branch('穿越后的初始身份', '咒灵', '最终结局');
+  branch('穿越后的初始身份', '普通人', '最终结局');
+  s.flow.rootId = s.wheels[0].id;
+  return s;
+}
+/* v2 → v3：把新增的内置转盘补进老存档，并接回原来的链路 */
+function upgradeToV3(s){
+  const have = {};
+  s.wheels.forEach(w => { have[w.name] = w; });
+  const add = [];
+  V3_PRESETS.forEach(name => {
+    if (have[name]) return;
+    const def = BASE_WHEELS.filter(b => b.name === name)[0];
+    if (def) add.push(wheelFromDef(def));
+  });
+  if (!add.length) return s;
+  const anchor = have['穿越后的时间点'];
+  const tail = have['穿越后的术式天赋'];
+  const at = anchor ? s.wheels.indexOf(anchor) + 1 : s.wheels.length;
+  s.wheels.splice.apply(s.wheels, [at, 0].concat(add));
+  const oldNext = (anchor && anchor.next) || (tail ? tail.id : END);
+  add.forEach((w, i) => { w.next = i < add.length - 1 ? add[i + 1].id : oldNext; });
+  if (anchor && (!anchor.next || anchor.next === (tail ? tail.id : END))) anchor.next = add[0].id;
+  if (s.flow && !s.flow.rootId && s.wheels.length) s.flow.rootId = s.wheels[0].id;
+  return s;
+}
+function normalize(d){
+  const s = {
+    version:STATE_VER,
+    wheels:[],
+    currentId: d && d.currentId,
+    settings: Object.assign({}, BASE_SETTINGS, (d && d.settings) || {}),
+    history: (d && Array.isArray(d.history)) ? d.history.filter(h => h && h.label) : []
+  };
+  const ws = (d && Array.isArray(d.wheels)) ? d.wheels : [];
+  s.wheels = ws.filter(w => w && typeof w === 'object').map(w => ({
+    id: w.id || uid(),
+    name: String(w.name == null ? '未命名转盘' : w.name),
+    removeAfterPick: !!w.removeAfterPick,
+    next: (w.next && typeof w.next === 'string') ? w.next : '',
+    branch: !!w.branch,
+    grade: (w.grade === true ? true : (w.grade === false ? false : null)),
+    options: (Array.isArray(w.options) ? w.options : []).map(o => {
+      if (typeof o === 'string' || typeof o === 'number') return makeOption(o);
+      return { id:(o && o.id) || uid(), label:String((o && o.label) == null ? '' : o.label),
+               weight:(o && o.weight == null) ? 1 : num(o.weight), color:(o && o.color) || null,
+               next:(o && typeof o.next === 'string') ? o.next : '' };
+    })
+  }));
+  if (s.wheels.length) {
+    s.currentId = s.wheels[0].id;
+    if (d && d.currentId && s.wheels.some(w => w.id === d.currentId)) s.currentId = d.currentId;
+  }
+  s.settings.duration = clamp(num(s.settings.duration) || 4.2, 1, 12);
+  if (!PALETTES[s.settings.palette]) s.settings.palette = 'xuan';
+  if (s.settings.theme !== 'dark') s.settings.theme = 'light';
+  if (!s.settings.historyLimit) s.settings.historyLimit = 50;
+  if (s.settings.autoSave !== false) s.settings.autoSave = true;
+  if (s.settings.chartOnEnd !== false) s.settings.chartOnEnd = true;
+  if (!s.settings.chartColor) s.settings.chartColor = 'zhu';
+  if (!s.settings.wheelColor) s.settings.wheelColor = 'jin';
+  if (!(num(s.wheelAlpha) > 0)) s.wheelAlpha = 0.40;
+  if (!s.settings.spinFx) s.settings.spinFx = 'bounce';
+  /* 老存档里的效果名迁移：摇摆 → 2D滚筒，甩出（已移除）→ 颠簸 */
+  if (s.settings.spinFx === 'sway') s.settings.spinFx = 'drum2d';
+  if (s.settings.spinFx === 'lean') s.settings.spinFx = 'bounce';
+  s.lastChart = (d && d.lastChart && Array.isArray(d.lastChart.dims) && d.lastChart.dims.length)
+    ? { at: num(d.lastChart.at) || Date.now(), dims: d.lastChart.dims.filter(x => x && x.label) } : null;
+  /* 属性维度图：点「新建」时把当时的属性定格成一张图，之后不再改变 */
+  s.charts = (d && Array.isArray(d.charts) ? d.charts : [])
+    .filter(c => c && Array.isArray(c.dims) && c.dims.length)
+    .map((c, i) => ({
+      id: c.id || uid(),
+      name: String(c.name == null ? ('属性维度图 ' + (i + 1)) : c.name),
+      at: num(c.at) || Date.now(),
+      after: (typeof c.after === 'string') ? c.after : '',
+      dims: c.dims.filter(x => x && x.label).map(x => ({ wheel:String(x.wheel || ''), label:String(x.label), value: num(x.value) }))
+    }))
+    .slice(-60);
+  // v1 → v2：整体换成纸张/手绘皮肤，旧默认配色「鲜艳」一并迁移到「宣纸」
+  if (num(d && d.version) < 2 && s.settings.palette === 'vivid') s.settings.palette = 'xuan';
+  // v2 → v3：补齐新增的内置转盘（地点 / 年龄 / 性别 / 颜值 / 道德水平）
+  if (num(d && d.version) < 3) upgradeToV3(s);
+  const f = (d && d.flow && typeof d.flow === 'object') ? d.flow : {};
+  s.flow = {
+    enabled: f.enabled !== false,
+    rootId: typeof f.rootId === 'string' ? f.rootId : '',
+    autoJump: f.autoJump !== false,
+    autoSpin: !!f.autoSpin,
+    delay: clamp(num(f.delay) || 1.6, 0.4, 8),
+    path: (Array.isArray(f.path) ? f.path : []).filter(p => p && p.label).slice(-40),
+    pendingId:'', retStack:[], paused:false, roundAt:0, grow:{}
+  };
+  if (s.flow.path.length) s.flow.path.forEach(p => { if (p && typeof p.wheel !== 'string') p.wheel = ''; });
+  if (s.flow.rootId && !s.wheels.some(w => w.id === s.flow.rootId)) s.flow.rootId = '';
+  return s;
+}
+function load(){
+  let s = null;
+  try { const raw = localStorage.getItem(LS_KEY); if (raw) s = normalize(JSON.parse(raw)); } catch(e){ s = null; }
+  if (!s || !s.wheels.length) s = seed();
+  if (!s.wheels.some(w => w.id === s.currentId)) s.currentId = s.wheels[0].id;
+  return s;
+}
+function save(){ try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){} scheduleSync(); }
+let saveTimer = null;
+function saveSoon(){ clearTimeout(saveTimer); saveTimer = setTimeout(save, 200); }
+
+let state = load();
+const ui = { view:'none', mtab:'wheels', treeOpen:{}, targetCtx:null, flowCollapsed:false, resultLabel:'', resultOptId:'' };
+let rot = 0, spinning = false, drawQueued = false;
+
+function currentWheel(){
+  if (!state.wheels.length) state.wheels.push(makeWheel('新转盘', ['选项 1', '选项 2']));
+  return state.wheels.filter(w => w.id === state.currentId)[0] || state.wheels[0];
+}
+function activeOptions(w){ return (w || currentWheel()).options.filter(o => num(o.weight) > 0); }
+
+/* ============================== 转盘几何 ============================== */
+function layoutSectors(opts, wheel){
+  // 颜色按「转盘里的完整顺序」取，停用某个选项后其余颜色不会跳变
+  const w = wheel || currentWheel();
+  let total = 0;
+  opts.forEach(o => { total += Math.max(BASE_ALL, num(o.weight)); });
+  let a = -Math.PI / 2;
+  return opts.map(o => {
+    const span = TAU * (Math.max(BASE_ALL, num(o.weight)) / total);
+    const ci = Math.max(0, w.options.indexOf(o));
+    const sec = { opt:o, start:a, end:a + span, mid:a + span / 2, span:span, color:colorOf(w, o, ci) };
+    a += span;
+    return sec;
+  });
+}
+function winnerIndex(secs, rotation){
+  const p = -Math.PI / 2;
+  for (let i = 0; i < secs.length; i++) {
+    const rel = norm(p - rotation - secs[i].start);
+    if (rel < secs[i].span - 1e-9) return i;
+  }
+  return secs.length - 1;
+}
+function pickIndex(opts){
+  const ws = opts.map(o => Math.max(0, num(o.weight)));
+  const total = ws.reduce((a, b) => a + b, 0);
+  if (total <= 0) return Math.floor(Math.random() * opts.length);
+  let r = Math.random() * total;
+  for (let i = 0; i < ws.length; i++) { r -= ws[i]; if (r < 0) return i; }
+  return ws.length - 1;
+}
+function parseBatch(text){
+  return String(text || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => {
+    let m = l.match(/^(.*?)\s*[*×xX]\s*(\d+(?:\.\d+)?)$/) || l.match(/^(.*?)\s*[,，、\t]\s*(\d+(?:\.\d+)?)$/);
+    if (m && m[1].trim()) return { label:m[1].trim(), weight:num(m[2]) };
+    return { label:l, weight:1 };
+  }).filter(o => o.label);
+}
+
+/* ============================== 绘制 ============================== */
+const canvas = $('#wheel');
+const ctx = canvas.getContext('2d');
+const resultEl = $('#result');
+const wheelWrap = $('#wheelWrap');   // 旋转按钮已移除：点转盘 / 空格键都能开始
+
+function cssVar(name, fallback){
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+function requestDraw(){
+  if (drawQueued) return;
+  drawQueued = true;
+  requestAnimationFrame(() => { drawQueued = false; draw(); });
+}
+let wheelSize = 0;
+function fitWheel(){
+  const stage = $('.stage');
+  const availW = stage.clientWidth - 6;
+  const availH = stage.clientHeight - resultEl.offsetHeight - 26;
+  const size = Math.max(150, Math.min(availW, availH, 470));
+  if (Math.abs(wheelSize - size) < 0.5) return;
+  wheelSize = size;
+  wheelWrap.style.width = size + 'px';
+  wheelWrap.style.height = size + 'px';
+}
+/* 把一段文字切成两行：优先在标点处切，并让两段宽度尽量接近 */
+function splitTwoLines(text, budget, measure){
+  const n = String(text).length;
+  if (n < 2) return null;
+  const soft = '（(）)·、，,。：:；;—-—/／ 　';
+  const closing = '）)」』】〕］';
+  let best = null;
+  for (let i = 1; i < n; i++) {
+    const a = text.slice(0, i), b = text.slice(i);
+    const wa = measure(a), wb = measure(b);
+    if (wa > budget || wb > budget) continue;
+    const okBreak = soft.indexOf(text[i]) >= 0 || soft.indexOf(text[i - 1]) >= 0;
+    let score = Math.abs(wa - wb);
+    if (okBreak) score -= budget * 0.6;
+    if (closing.indexOf(text[i]) >= 0) score += budget * 0.8;   // 别让第二行以右括号开头
+    if (!best || score < best.score) best = { a:a, b:b, score:score };
+  }
+  return best ? [best.a, best.b] : null;
+}
+function draw(){
+  const cw = canvas.clientWidth, ch = canvas.clientHeight;
+  if (!cw || !ch) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const W = Math.round(cw * dpr), H = Math.round(ch * dpr);
+  if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cw, ch);
+
+  const cx = cw / 2, cy = ch / 2, R = Math.min(cw, ch) / 2;
+  const cRing = cssVar('--w-ring', '#fff');
+  const cHub  = cssVar('--w-hub', '#f6f2e8');
+  const cPtr  = cssVar('--w-pointer', '#fff');
+  const cSep  = cssVar('--w-sep', 'rgba(255,255,255,.86)');
+  const ring = R * 0.05, R2 = R - ring, hubR = R * 0.155;
+
+  // 底盘（纸白外圈）
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU);
+  ctx.fillStyle = cRing;
+  ctx.shadowColor = 'rgba(110,95,70,.20)';
+  ctx.shadowBlur = R * 0.10;
+  ctx.shadowOffsetY = R * 0.025;
+  ctx.fill();
+  ctx.restore();
+  // 手绘墨线圈（固定种子 → 每帧一致，不会抖动）
+  ctx.save();
+  ctx.strokeStyle = cssVar('--ink', '#2A241C');
+  ctx.lineWidth = Math.max(1, R * 0.0055);
+  ctx.lineJoin = 'round';
+  sketchCircle(cx, cy, R - Math.max(1, R * 0.006), 7, 2, 0.30);
+  ctx.restore();
+
+  const w = currentWheel();
+  const opts = activeOptions(w);
+  if (!opts.length) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R2, 0, TAU);
+    ctx.fillStyle = cSep; ctx.fill();
+    ctx.fillStyle = cssVar('--muted', '#9C9384');
+    ctx.font = '600 ' + Math.round(R * 0.085) + 'px ' + FONT;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('暂无选项', cx, cy);
+    ctx.font = '500 ' + Math.round(R * 0.055) + 'px ' + FONT;
+    ctx.fillText('点右下角编辑内容', cx, cy + R * 0.13);
+    ctx.restore();
+    drawHub(cx, cy, R, hubR, cHub, cPtr, cSep);
+    return;
+  }
+
+  const secs = layoutSectors(opts, w);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rot);
+  // 扇形
+  secs.forEach(s => {
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, R2, s.start, s.end);
+    ctx.closePath();
+    ctx.fillStyle = s.color;
+    ctx.fill();
+  });
+  // 分隔线
+  ctx.lineWidth = Math.max(1.2, R2 * 0.006);
+  ctx.strokeStyle = cSep;
+  secs.forEach(s => {
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(Math.cos(s.start) * R2, Math.sin(s.start) * R2);
+    ctx.stroke();
+  });
+  // 文字
+  /* 排版策略：
+     ① 单行能放下、字号也够看 → 单行（短标签和以前完全一样）
+     ② 单行得把字缩到「看不清」才行 → 改排两行：两段沿半径**并排**（横跨扇区宽度），
+        每段只用一半长度，所以字号能大一倍左右，多出三四个字也放得下
+     ③ 两行都塞不进（扇区太窄/文字太长）→ 按能放下的字号画出来，不截断，
+        超出转盘的部分被圆盘裁掉（就是你说的「冲突的字允许被转盘遮挡」） */
+  const maxLen = R2 * 0.945 - hubR * 1.25;
+  const MIN_FS = Math.max(9.5, R2 * 0.048);
+  const pad = R2 * 0.055;
+  const measureAt = (size, t) => { ctx.font = '600 ' + size.toFixed(1) + 'px ' + WFONT; return ctx.measureText(t).width; };
+  ctx.save();
+  ctx.beginPath(); ctx.arc(0, 0, R2, 0, TAU); ctx.clip();      // 超出转盘的文字被挡住
+  secs.forEach(s => {
+    const label = (s.opt.label || '').trim();
+    if (!label) return;
+    ctx.save();
+    ctx.rotate(s.mid);
+    let flip = false;
+    if (state.settings.autoFlip && Math.cos(norm(s.mid + rot)) < 0) { flip = true; ctx.rotate(Math.PI); }
+    ctx.textAlign = flip ? 'left' : 'right';
+    ctx.textBaseline = 'middle';
+    const baseFs = clamp(Math.min(R2 * 0.125, s.span * R2 * 0.52), MIN_FS, 27);
+    const xOuter = flip ? -pad - maxLen : R2 - pad;
+    /* ① 单行：先求能放下的最大字号 */
+    let f1 = baseFs;
+    while (f1 > MIN_FS && measureAt(f1, label) > maxLen) f1 -= 0.5;
+    const singleOk = measureAt(f1, label) <= maxLen;
+    /* ② 两行：两段并排，各自只用整段长度 */
+    const readable = Math.max(baseFs * 0.72, 11);
+    let f2 = 0, parts = null;
+    if (!singleOk || f1 < readable) {
+      for (let size = baseFs; size >= MIN_FS; size -= 0.5) {
+        const p = splitTwoLines(label, maxLen, t => measureAt(size, t));
+        if (!p) continue;
+        /* 两行要横着占地方：最靠内的那行半径越小，切向越窄，窄过两行高度就塞不下 */
+        const wMax = Math.max(measureAt(size, p[0]), measureAt(size, p[1]));
+        const rIn = Math.max(hubR * 1.2, R2 - pad - wMax);
+        const halfArc = Math.max(3, rIn * Math.sin(Math.min(s.span, Math.PI * 0.95) / 2));
+        if (size * 1.24 <= halfArc * 2) { parts = p; f2 = size; break; }
+      }
+    }
+    const useTwo = !!parts && f2 > f1 + 0.4;
+    const fs = useTwo ? f2 : f1;
+    ctx.font = '600 ' + fs.toFixed(1) + 'px ' + WFONT;
+    ctx.fillStyle = textOn(s.color);
+    ctx.shadowColor = 'rgba(0,0,0,.16)';
+    ctx.shadowBlur = 3;
+    if (useTwo) {
+      const lh = fs * 1.24;
+      ctx.fillText(parts[0], xOuter, -lh / 2);
+      ctx.fillText(parts[1], xOuter,  lh / 2);
+    } else {
+      ctx.fillText(label, xOuter, 0);        // 不截断：超出圆盘的部分由上面的 clip 遮住
+    }
+    ctx.restore();
+  });
+  ctx.restore();
+  ctx.restore();
+
+  drawHub(cx, cy, R, hubR, cHub, cPtr, cSep);
+}
+function drawHub(cx, cy, R, hubR, cHub, cPtr, cSep){
+  ctx.save();
+  ctx.translate(cx, cy);
+  // 小巧针尖：与中心圆盘同色，尖头只探出很短一截
+  const baseY = -hubR * 0.5;          // 针尾（藏在圆盘里）
+  const tipY  = -R * 0.22;            // 针尖高度：越接近 -R*0.155 越短
+  const len   = baseY - tipY;         // 可见长度
+  const pw    = R * 0.040;            // 半宽（保持不变）
+  ctx.beginPath();
+  ctx.moveTo(0, tipY);
+  ctx.bezierCurveTo(pw * 1.55, tipY + len * 0.36, pw * 1.22, baseY, 0, baseY);
+  ctx.bezierCurveTo(-pw * 1.22, baseY, -pw * 1.55, tipY + len * 0.36, 0, tipY);
+  ctx.closePath();
+  ctx.fillStyle = cPtr;                                   // = 中心圆盘色（--w-hub / --w-pointer）
+  ctx.shadowColor = 'rgba(90,75,50,.22)';
+  ctx.shadowBlur = R * 0.030;
+  ctx.shadowOffsetY = R * 0.008;
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.lineWidth = Math.max(1, R * 0.004);                 // 墨色细描边：两种主题下都有对比
+  ctx.strokeStyle = cssVar('--ink', '#2A241C');
+  ctx.globalAlpha = 0.5;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.beginPath(); ctx.arc(0, 0, hubR, 0, TAU);
+  ctx.fillStyle = cHub; ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, hubR - 0.5, 0, TAU);
+  ctx.lineWidth = 1; ctx.strokeStyle = cSep; ctx.stroke();
+  // 中心手绘墨圈
+  ctx.strokeStyle = cssVar('--ink', '#2A241C');
+  ctx.lineWidth = Math.max(1, R * 0.005);
+  sketchCircle(0, 0, hubR * 1.04, 23, 1, 0.34);
+  ctx.restore();
+}
+/* 手绘圈：固定种子生成轻微抖动，两次描边模拟毛笔重叠 */
+function sketchCircle(cx, cy, r, seed, passes, alphaBase){
+  const N = 96;
+  for (let p = 0; p < passes; p++) {
+    let s = seed + p * 977;
+    const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+    const pts = [];
+    for (let i = 0; i <= N; i++) {
+      const a = (i / N) * TAU;
+      const rr = r + (rnd() - 0.5) * r * 0.017 - p * r * 0.007;
+      pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]);
+    }
+    ctx.globalAlpha = alphaBase * (p === 0 ? 1 : 0.62);
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.closePath();
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ============================== 声音 ============================== */
+let actx = null;
+function audio(){
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ actx = null; } }
+  if (actx && actx.state === 'suspended') { try { actx.resume(); } catch(e){} }
+  return actx;
+}
+function beep(freq, dur, type, vol){
+  if (!state.settings.sound) return;
+  const a = audio(); if (!a) return;
+  try {
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type || 'square'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, a.currentTime);
+    g.gain.linearRampToValueAtTime(vol || 0.05, a.currentTime + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + (dur || 0.05));
+    o.connect(g); g.connect(a.destination);
+    o.start(); o.stop(a.currentTime + (dur || 0.05) + 0.03);
+  } catch(e){}
+}
+const tickSound = () => beep(1180, 0.035, 'square', 0.03);
+/* 法轮齿轮音效：取自 B 站「魔虚罗音效素材」BV1KF3S62EaK 的 0~3 秒，内嵌 base64（离线可用） */
+let GEAR_SFX = 'data:audio/mpeg;base64,SUQzBAAAAAABSVRYWFgAAAASAAADbWFqb3JfYnJhbmQAaXNvbQBUWFhYAAAAEwAAA21pbm9yX3ZlcnNpb24ANTEyAFRYWFgAAAAkAAADY29tcGF0aWJsZV9icmFuZHMAaXNvbWlzbzJhdmMxbXA0MQBUWFhYAAAANgAAA2Rlc2NyaXB0aW9uAEJpbGliaWxpIFZYQ29kZSBTd2FybSBUcmFuc2NvZGVyIHYxLjMuMzgAVFNTRQAAAA4AAANMYXZmNjEuNy4xMDAAAAAAAAAAAAAAAP/7OMAAAAAAAAAAAAAAAAAAAAAAAEluZm8AAAAPAAAAVQAASJAABQgLDhEUFBcaHSAjJiYpLC8yNTg4Oz5BREdHSk1QU1ZZWVxfYmVoa2tucXR3enp9gIKFiIuLjpGUl5qdnaCjpqmsrK+ytbi7vr7BxMfKzdDQ09bZ3N/f4uXo6+7x8fT3+v3/AAAAAExhdmM2MS4xOQAAAAAAAAAAAAAAACQFQAAAAAAAAEiQdOjpzgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/7OMQAAElQkKksglBpl5MVareQAISagMgAEGjSAArZvimAsBAS+RrOD4hnAA00tMbhj8qYOyj2uIuPCq/fWmWRAcL7AbII9DyAdiDQgCoJYwb/9SBgLMFpC4MgREI+cAAZICglAYqMHaIhn1kZk3HJKxwHkbYWG0BBjIGZ3pn3jBvhQAgBUKlpCFhUqHz3Ko6Pvf/////87dbN2GCKYjNorIEQJ0JCBU09z0v3Dl/LHP/////88MLqt5hwgCwHCNMsapKTigCBAKBAKBAKBQIAgAAPCyEDCf/7OMQJAA007U25WgARhZKqAzeQAIV8DRInAzmPfAwiCwMXhfwPidA1D78DkBAORWAZEf4GNAgaAQGdgMB//wCg4rwcoNMcgdn//gaAEAkGHHiAYswdguMi///+bh8gsgiAssc8ny4YGn/+H0HCBTmnqJySRiLGLBAFABAIFqi+qGbQ0MUzi2JfpM9ZZgUERIGFGo0R06U50HCE1JFpjqKwWaVGtYsWRQazI39gxiGVeXU3aeQV7M/VjtrHOmq2dfnGZZbpt9/dmgtEZUvoE5KvHpM2DyU9av/7OMQFAAwtF2IZhAABdRRtwx7AAPcs0du9T9qWp1BYUBojsVyahwgiN35Aj3QdA3FL//EZAbiKekCw8pwn//9x4eCweSrlupJsf///9Wh6VQve2TNMWKiv///+PIHJLvBjCiFBWHf/ucT9PauIBM3qefSKpibd6iN9N7c3CwIpJUtXSjQ2jMobMhQWiwvNztSXk/0uWK3qnjdszp9G9bLa58z/X7b033WvlJJ0ALNyBtbawgTvEJ46ZracP2WFVuxhQRI9Pmde7MWAVokkopEnsUEFYAxyTv/7OMQHAAwQp22Y9IABmR/tAzDQABGGImyNZEKhph9LCkisTPmg+itdQBSr43qBMshxnGmtk5SWNpo6tW/d1NAQQLk/qUtvx+//ajs6xG1bkFRA88/YSggNbYtIspy/7gO/cVft0/6GA0S6qUiO88ecjlejqyuUR+A8oqJwGsRQhieO0ehCGglDxPnDYZI3rJdRmblhiYOTS6kXSQmzs7oOkpJlsYGReY8YlA3SUiyLGS3V11mRmiatZmSRalsqkr/uvTZ2SPNOVuxX+walnRHkzQQSRIehIP/7OMQFAAw5FWy5hAABghRs67CAAAFuetXZ+M17MzqjnLlMOHD1dxZoMsfbPMbgKA0LBoUIQdD25bw3UWHYvJuxUz+/EORKhxJBeak1BT9T3/5i7Rcl1HazdP1////8TDPTkE+PCVDf9Bsu1iwgAABCKbgBAANSBnLdiGMJ6mzo6tmvWu7tCQQRFQLmLA+72KNHXJ8p2quP7ZIb6/QdTsgvVXzEdTok254DHFyBJuNnCegBiAmFrxVLHkIRPhh9Y44D64Rf04YoaUE5T1OVFFTaLJKKRUAylf/7OMQFAAwdc2msGEvhh5Ds9PYM/NCKr+wd8fqfQfWKAQXSB9kFLkidcLfDKTr99aqaqcve1JVXh5Uk2zalLadvmRBThh7PVDE57ZtOq25SbsTu6v2Jmu/ReY6oYy+nW/9FZFUk1WFIEmJZJBuhkEoEpNSAIYEPGkWMxEc1QmaAZOj5haumhwbGKk26FYraaXVKqxG3+Wm9QJRILmk3zzQkrvV6OPCIIY0+Ln49+JwECB0DkTCJk8GkIkJE84iRAxE84QH9ut3pW4KkYr5VBkUAElOSgPRCSf/7OMQFAAwJL2VHmG8RdxlrzYYM+nR3UU8Dzhq+zflZplT0JHVQThTdHLx9x83ZdEdzcr46Czua0SFGxUEkxVdoNQTH/CpubT1WrVQ6wpVI/9Kvn9/x/pIfqpfDEqWy11UMBCtH+KjHm4wGgCU3KCBZdZurpvLyVWSkdFc8Lp3xNaoEgmwDuByJKmdZhOpMTZT6ykdabDIUKVv11GolSlWMYNsSev+e15au4XmX/ubCwyygIruEqQvWJ5d6Xz1xUr5T9SeJlqOFKSYqzNjBxUUsfZkmeqtSp//7OMQHgAqMgWLVgwAxzpZpyzeQACvjOWd5cBqly+dW95hIckVO9Kq9Il1k183mY87H9QWcE4NgrKjyykjNk6h6zx6Cp0kqVMMlQVWAg4WlfT539/BqYGGgDUgB+AAAcsSoYhxA/Y1XjQmyJUKdoqDqKpUJQuipAeAlFAgKAwbRgBMYYKDojWdRy1Ny0CMpMCo036RS/30llITBstYghmw67hucornMrEmzlctms8atDlvGfysW//Wp6Gsc/13W+by7//944gOqaeKH7WWrgqaZooIAooIAEv/7OMQFAAwBHXM49AABV47u556ABvhTQRq0xlniel7t0WSRxpS0a9yGxOMsp4M8VNDgGjDCl//CPqhojsb3c///Fc3QiW1RJJsfaaf+QUWpZl31H/z/v///4e3F3ZBh40odDuz/5k+0+MHOO+qluqsRyEgERK0qik6hDMxPqZm1Ho+JCI0OA7PIkR252oZdwvkkmsTdbMdawg1JFUKKhoG2UrgkMFpxrF70yoboTiJ+g1pLAY8r/GuJMch3LA0t7yYBYECSkk4D5Mb8kIpbCYwAQUbDowRUkf/7OMQLgAp1T19MGEXhVpArTrLwAMsks9IGcj5LZ7xEGIsjlQjwxFZczD7odtdhSXSiMrSzIeY2YtO3vT5SeupS7fMZ/sanQtf/91xM8V/w10oFO2gGfUERLGQ8VggjUOyiEPNCeTEIn6lGco6jRJgUKjjKlLs0zbpmUJ1QWdmZYT/U8z57XW/n2zJjP/t/aQJmQWIvPc1kavCriNmQq/K3rcBf9/O6KhMYTBEB0MgrUVhnkafJlGn8hpxYrDTpO43AN4LUJiHNEZHcNg9SKkmYjkCrl4gGJv/7OMQYAA0pOVQZpoABfJksgzDwAKVKXm6JkhUzMk6bo0TdJI8plerq/TMzc0WmSi//b/ubqZboJm6f///+TxhyXJRabXYzNy5//9wIBlSdpe7yi3L85biEGUXZuUYy2NQ1K8MAm6NMCO+mjTKJPRoKNUjdRwplhteb4f3ld7s+xVle48L28HWaz6i7jRYVbRsZr9/7/ktFveSbVa6lqsBWq973z6OIoi/imj79VSUka4Odu+xYyewWyBAlIdDRkiUJIDDACD7R1cwG2wZ5IxCjmQ0mgDkhY//7OMQVAA/Yx0oZp4ABhLMsAzCgACCQscdVj9hneuFtUQn7mxxlKzUj2y2KlPN6uZ2d84PH7zMJzdJ1la5GbEdhc7MX1mt1EzWdarqavvm/+seOwXIFxMYK0KhokKoRqrjdlEb/l9nrdkklYDBYIQkuxzs3uvRSiHatJfop4jOGg/IDTJg1aPwGxWdO5kaAUwvy+iHTtMmHg/GZck9uvs0W0IyUYC8GkTv//8QhESHkh8wwz////Fu6oYSTEYxP/////MMOZ8w425IeJRMbdfV2Nx2ZdnGCYv/7OMQGgArUl14dh4ABW5HsqPMM+LYpaSvdplQhRXHMPTBYWo+zqdq+KyHM5wXHbDbFlOcqpherlRz2/1B1Z95YsPUP1rqmqZtFi1KhIRBkGh5VO6WYVshrQ7/xEFRoIYCEhSbYAB8G4bhOE+n36vB7ORQDnsJkkPVqTlJy5qFbi/TSYTgCc2LUMqNGLC6r+XBMwEBJiqRDh1QdGHmyxkNLuUe8Wibw6WDrRf1WAFyRqHIsbYJaFZaaqusABmUOol+p6BYboJqzO8aKgMQQ4E6lO9EnYFmSM//7OMQRAApc+2ssDEuxU4xr2ZS8blEyl3W8wEYjpzyOyKZE3M7qcKRes3qzXbU3QeC93/sOg92ItM9fUShpFimDx0kd0SQB1AkAjWT4WomiApBYZLGjxuLDE0DLkIQX8VwqzjY2kuB+ZmfHuoi8qpQI46HNlckQfqDmiXi1BUGQfHT6w2UKBvOIBR+aRz6kaVy1bwM9T5iJHpiCBijXQH4Jddwl1Tkqt0uEdhipWp5VZ3YB0IbDoBYRoaDYZ5gw8waULFSUcd9z+8VBN/1+i06iE5l+5yCeoP/7OMQegArQy17VhAAyLLMq5zTQAORP7Nmb9Zo7xh3IFzi3AIDAn5ad4Y8r1SywCgBmKKCCAQgB8ElCa9MpmBQLbt5GmsMyh6KtblL/8oYsRigQiWBbxyD0TWJSVrKJfHOZsZbLZwV8TM3rOpvNHSTdQnA7y0yEYHh/vV8oEmUzUe5uHPS//u/zQkBLBgA55LqDnm5L////4XgokuMATyXJQkCgbkgPAt/////8uGg4CgbiYHkzMe75pQ/ZtJOBYnS6t1SU9L/u0EpltJTyuKRi0SoipGuNzv/7OMQPAA5Q9Wi5hgABXhbud5iAAkvjmz6bVJ1Rcgw1R7NsVSSwIWgJ6J0/dgPZY60EEak1q2Ukx185d1rL7/rZp07u15DceMpghmZh1jazszM7O7ScnnVCcBHy5NrHInWPHLcWcz+j+OBiLSCJTcadDEB1ChjB9jTAiluA7hpTpPigBxO6KltUGTfvdX6aXS1DKOhIYaaSOpZVVVL4qKK5slhbzRRpJhXtKhATYlBXEWdEQd7rawE/xR8t/XxCxA9CAATUoAascJuKRl09s0vmtthdGb6ETP/7OMQLgArgq2TnpMlBVCdvdJGKZsERMPrEj1EwvrDKbvoOuAcBwGPQtr4IMvRa4y27ezwdNAtMpCJBx9R3fsyBw+AHNYw+F1pSN9B7pldvPWDXy5QNpNxpkpJSQIUZsHyE6tHKCq00MCUE1U3RkrFUz8DEYqqtcgt8u/1SigwIcMaxv1UiqrCZssMZehv+VpeRdbO3T///0SqzFImdZlaIBwLNn/JaBcJIAwDU2CrAHZrpxHXdxEgGdvOGy02sogge+Q2Q2SPP6VbrI4szt7Qs51C9sYgpuP/7OMQXAArEx2THmGfxTpGt5p7ABnBoralGKaE7KCFUKLyB/cELBJ5FJI8aM6Wuqd5LUslET+umjqB06weBD1TXf4CZHkOtMq1ZfIJ9pms5q5Gx2rBDBsZGQALDC45OrVq2WXHnvrXsfPcTO/kzb+682mZnXbrZr2PFyihcu8NEQ0RTqZ+mjGeY1uZ+V+taf7UEmRJJJo2LNVHMiIRAAS9kkE8oDQqzV9K5ji7mZyybh6PQ9wyKIeXLj8cVgnv1ieCSHhIEEd5LD2My4IKnCktHQXqPBwQg7//7OMQjgBMFiW25hYAZXhbx954wBgJARCygASklKE1zFUjdps4n3vN3szBIoVpjzr6ikKdCUPlM/JufZvp70k9RFN////+Pld/DP/MT8KGjL959h//////4Z/Xs5Nzd/8Vyfm8Brk38tttkkjcgBZmiCBP0eLg5o/MR48gVpNaQGBuHdAwKVXBgCADQkQUQ4qnrFhH/eVlNX/7tn5XpDDHfnBUmlgr24paxgKnYVT/OkzjYugn4Km+kUAwUFEIEkQAkAkty8A/CUnurRQcmbQkQIhpDQ2Sl4P/7OMQNAAqcW2WnpMPBSCbsJYSIfgqcKhULPGBNapnLG3muRI5jHDmUVIrKhpShKj1B1YsCTQkVOuO3+2IsqM9DyPUeUPOwNDWsFed0h2okIQIgMyoPSS4ed5gw4oQkjc2SbARLnpOtiGUnGlMZFgTlczHR0Vq6lVGQ8reRBZVvL2f3eKX5n/zsrWZWV+7o9HUqN+uZ/sy+oOYQ5ss3R+dJVSbmuTckkANdK+s/Zuodn9u+17+SMFzYKAYQTI8nttyIHTgplznqBBDP7nXbYhlzrLxvYLgwc//7OMQbAApMh3VUxIAyQaaudzTAAg+UEAyRL/uYHXJ1uHAU7HizDJJO5QlWGbnu+v2xNypMktqSWvt1uxiMAHDCiwJFaymq1l+X+cSEu8ovSv/lYdiB0YkwLqwoS8QROjQqn5weD6+WTpfRWHgHyWIhEsQqLFsbv/zyrrk9o8umNV4/uLzeZ+emKzTnpFBmX2Jf2+3vnT8G5s/NcXr3bLu/5YvkzMzTjzpmbTS257tenWM6abtqqXin+VUSLN8yIzhpDZ4wzoHvXtGmWTkbzQozLpuUZZUD8P/7OMQLAA1E6Vy5lIABk5gs1zDwANalXXsOnQ8SJkR4GkyWVKmEJsrYEzhPSeaTEZLmU9WXqXmYXbJ1HJno4mzu38+x/JC7zajBJd3G4xz/b//3//bn9ubdGYuWC4dttt7k6N3//D6ay7NnJM0DpQMhZmDuOzdcyzPwL21E8K1M/w50cvE1WVUr0edErgrndc942PWKLBmkz/OlGZdM8GDi2M/5/x22aFCfMsGJr/7396xb//3zRzbnrBAnGEpZDfWtDyAqfXPa/6ixu1gVIJe3AOGXDwIKBP/7OMQFAgp4WVh9owABXA4q3rSQAoZsofWtAteMxq7P2YIquzfAgYfhFEcFBzU3vOHZTbdd4QPChVRo4fCwZAQDl34qIQOQeJkFVS4IBUKkv9oVHAsAtY8v8UONIL+qAKJbgAu1CBKEprsORiUZ77O0VmPzeFqXhQHBgUEgszqF8oKICQwx4QzOwgJIa+7+KsRk0F2g0IzYnCSAvkyQtTtC5oHR4e/mjTtZVyCCUOIpxwdXf+ipWpIA6OPmnEOenot2hT5lbnyKfgppsSch/IfA5AMkJwAWwf/7OMQRAA6RO1w5poABlyCsFzKwAD0ojDiNCbHh6hbSgZphSlEki+PAgEmaF4eabMfPn1JVMcISQmaRYPMnGBsYKPmarzCmbLx7oFwe6SBuhq//+hM3L5vJf////3TemnX5v//+muHxQQAAIAVAoSJkuoGVvrNWIr8zQU75TduGdyUKUO8+Zj6Q9pjpfFiIYEouQXPHWo046Ak0Uh1SlKW9Wan6D8Qzh6G43UI9/V1Hf/PrTRsibHh3Wz//RqP///qKp3XcuS//jk1HTwkVW8kmwIEtOoDAQP/7OMQFAAusqWC5h4ABVK3uG55QB+DiKCUUrkNtrcru1qfTdm4MEBD0+LMM3dqKtWKwlRbWO966cH7/Y6UsZSb/9KWgKyJT+FKfrnvEb///0prwKb8T5iPjBy5GD4EdKkVgBP/////9/MRUlwV+7e1sOdV1Irtxo8HG7nBYwWaxhR1Ioq20xpQ6KrWiGUszpKpUiJSstkujoT0St35vp+hjG+th5dSsifsjlluNV6KVWK9Z1Mq2//R7siKkeMUHhuqt2wGRQREBVGRB8v9kxJQnJdDwKHiMo//7OMQNAArQmW00lAAx6ptr9zLwAJa6dCpNuiZ9IFho5l3ntqVuVVVqt6q5rV4sVFQaAoBBVqugonrioaJi6zFCksrFQVlgaPYTDoa/4NJEoaKFIaZAiXp8ec+++AAAEI7igf5Z6hzEnGpdLCQMijAE9DjjuG19y2JoQgH8AZq5/ZWh0HyLCbgWieDdRgWyeEs0OJXM6Mk6lja6UT87JDfuMTKdiL+dWjzX3OyUpTVPiCns4YZvafF6f//0j+J//S7PGLZad1cH5OuEjyomFJcs6kFDB4yNpv/7OMQFgAu8j04ZzAABjTCrVzRwAbciBseEhUk2upsisAWA4qCmvLicVUSNBmc1ln7DpW60YUyVutuTqUWFDrEXhmAqWvWt75jNWqSVb/Vy7/avMtZY27lbuH77eQI8WDOb9VblWf/YOBtsCQftYj+BkShZqgSZr5RR34YsRqxKZVRxCWCxBO6D5phxBWPALJnn3Y0048H4PxL1bujZYSxLYz19PtBwYxcaD4YCP///CcJFk0ae////+NBow3RY+TZ//////0MHDNXH1Q8y0ALj2mGxBUUXpv/7OMQGAAvI/WAZpYABlJRqQzeAAKv1rE7P9lFPgbj2fP0uUAaJZBNXioBIIIRx4VJxSay2nNWcbG5W1sulv89EulCCGZCSjLef//v8/pLuk1c9A1/m/r///9sOdbl6CRrp/4WO5KZMXBDBQESQGDh6Ylw3CbYsxNBAMgVA7nMoFdKpfi7kEsh1NyQ1pxlksR/p0Xd3Ld6novxYA7cQZx+essbG997hhbnaOL2pvX97z9aud+rv//GyKlYmzrQZP6wwNBBRkP/LfhxQDcodjfZJhWWKEWnlWv/7OMQFgAxBh2i5hQAJbhxsAzBQANPzUO8uT9HMz9+nlGAqhKGwiWQ0lHpIxQ4WBu1jUMuLBEL1qvZGnuRlDyVDH/9zDKnM5w3HFT/3Mb3z0ISBjpx//+/3/OY+qGupqf//98zb/UwwmXvTGFNGTB+HfSPeCXXrWMepbmb1W5VkoiBnDoKAAAyB0zsiiYCgsrKcc8XpIT1iou9BexIeHmdKa9nkmKJVuyMUvyt3HsdBQCBskYKBo3K9T5B4gSIAcZ//5XIHxAEaH5bZEICWkWQh5yQQA4byv//7OMQIAAyQ91q5lAABix/s4zCAAJDb8urCZyU2q1WWhMx48wSCw9SR5yAEEXiRhWMHurDmKOq1RrZeoRCEhBXppr//w85HDzBE16OnaNv///SnPiK+GFj5EUapWJfp6HxFFw0W/+Ua8UVhkqAAAAgIyyJPmNIxySrVtZfnP09mMb8UOXpxDEooBosOG3Q4RRHWxCkzmpkYNUeW8DJpY/pS+RBEAapk1M1Hc//eLsSMOtZIeup/4v7+v8y0Z0VkNA4GHrGmTzf4KyInBOoI0sxQKHwOiPW6W//7OMQFgArIq14Zh4ABopbpwzbwANdkWNWQPXfbg9Daq2FIEhQiI/Y1S+VB/L5hM67W3jYNxNItilSrYzx9w4+6pti24T3fRMPcy4eR/mP3Fzmd4zG9LxcSTCe3v1SLus6owC5OeishYMObGiZdAoIoNDjwwcuhCe/j0vxBdECbGop0JcGZPP3GsdkiPXS4OluiubO+Z7Q4Pfq5sZaN22DX/hK6u83gIdEULyWTN7xouv/9YiQ7x/WDF0HLqhFp98opRIl2Zzvu1QIFhLIIW8YHAvhCMukdPf/7OMQHgAyFAWa5lYABViNtG54wBnf63Vysbp5VkCACYJwJzAyOmRQLSFH9NZoJhnUHUykslR5rDDi/tp906+dvfm9oH1EahFrWtn//OLsZcvp+2Yd/x//1+98LoHLYxdiErcpf+UNIPgwoMWqoA/Ieuy+LeNKrEd5jW5PE2HEERgLGBbrOOId80qba9n8M7/3q2rOMaHN8KjfseVKZTjMSlapxmIqrZln7dqqk6Z63RjDMweExgqKip9xn/rb8cgEAFOXcGpuoEhcyN4nLAHlq5LdQKryy/P/7OMQMAgqUWVbssMOBShSqTZSM8LY4llBJHljECMiYXhMowq+psTmdYsMgyKA0cCINKeJRZFZeHSQ4+6awWO09aFzKOkmdokZdP/1BUYAUX1AAFXYCPQGAK8Zo/kPNEmCcRgKgEAVerbUFTxPhhvQofbigLqPUgsjDo6ipdhoZ9mWnYR0uZITA6nWcIPNlIoAKcXgM4J/gUaTDkKX73aP/X1M3VSo2m4l/fgIuR6znna8isUjJXC7W8scckAdBPy5CQedOWpt5OwNwayTztfOTzZYhX+w5ff/7OMQZgAqw2XmHsHDxWh9saPGKauBE7dHOITu77/46tBq8IWLECwggAEwv/3BgYIYTlLKJAuGB0hAIASlABMDZOwyQUYjyMYo0NPQ7opPNza/RUd9HTrqJPXWMGFCsCyoCpIwrOhVUz9VWr1fyblVj5wUQpYfJrqArl/+pcpfTzlZwIOAYOBnrT50jZawaHW0m5XADXYWteHib799iAOkEjCaNEjF1jhqXhM2Tar2awEzdjyDGfDCpQeGBiS8mfFdDHLKtwBgOBipYDFwgIhYCrWLEwpNh4P/7OMQlAAqsoWlHmGfxVJRqnaSNIuDnlQVDtT7/6U/9BAQknLQAvXLXOmmK6TLZqRQCuVAIh6IElWREotEUrOaxoU7KBx6SG/gZC4zTjUHsGC1GW4m93VZSKnUGY7ixZTrCILskS0CPeBwsk2i5CnELIhKVOpUAISe3AAIvCBIwRAM0qKzTlOy5J1LG4B+MkBtgDES5okPOB+8Z2dhQ57MXtUO3rheStpX7zbvXtmfot5YsMmFCSeGuUVvysX7uMYT5gD/2iEVDILJBLtv4MPnRKAMGD0yFM//7OMQxAgqIs1jtPGnBUI1qTraQAIcadLI3KIU9srls/SXZ5CZODIATIhSlHfBpvJSlvlrXuszLv4iSnJA6ol5enQ9DzoDaE3dM5GSs0CYoJ/1QL/9Z9ZBZ/mnqAmVqoIIAIIAAGjpSChI0DzX7tY2712YlONXDO2dxIOHDi5wIUJi4L4up48TEhH8md45Tiokv+3w+4fIg8UChif+xFd/jVYYKl3/pqdxEMhdBB3//ww96gcAELTUVex/n2nsqXDK/y5WvSiLcp6pj4mBCD4ZNI5pMOC2h4f/7OMQ+AAro32M5koABXJOsF7CAANCOK1zmrDQxQs6rTbQU600Xe0WoqGoSHCUJOBUsDYLCVqOeOgyR+Vip09TFLW//63HtVSCm04DdMjkPNSTbrDReAnSK6aI3B/1TE1H66OIVcflUVDNDvCpitiAmTEzxwGBoaJh4FWMJEBEhhg0LSDYMkjwkNjB6/0yys+aATxhoP3Crfu7kAxpVpqruYEYDiM3M0auh1LUao5fhVtLDcMh6gkRPp27Zhbafw71Ze2/i7fIvyKQkCIBhzeIiIZn/n55o4v/7OMRIAApkYVRsJGXBURqtMpgwBgHDg/JGCowGjFesXSPLCXUHaf+e4aZzShd9JBIBoktfuD5Fhz6XPWtYYyvDKzhQTljSQ8NEMCObGKCcsYMDkRg2xSnXWIibCora91r7eWLjx7lXVHB1RP//uKIh/0mOqGlUhrj//9+0RBd7/lp2mfK/0lIIGf+QAlAAAAp6ALGYc+jyzla/TZVLOuRCir0+ZiEITRkWQRu3ZtTaoY8LoYeQV4ljCHFA+D6McERA+aUhYgDEsTl8mhtH7rmzgsdJ0qAZSP/7OMRVgAvhF2a5hAABTw2rq7BgANlyjzFnxjpSAYADGA7YBS7TAF6TauAsEse17p0pVPukwQyoDcP1frVSIxqALzdMkguYJ3zwuJpRWG1jOs7Nogm9K35TfvzYE7c4w4cKeDziJOj1vRGDxyjPY5H//5/cgAAlRgBlFttKVtWqpKq3Jeq1HFaApC5pORW6etBZRUbOQluB8LRSh9am0w9t5sPlW4sLGnh0NXp/Zb9KlBwSFWVhrCi3DxGKkCgkktRqdlg3ApGiAYMEGOW7A02BJmLo2QPosP/7OMRdggrcjWDMMSWBT45sXYYYeIKJLpGBIb5BdEkPzFqqJ5rY31Ru/SootnWfyE//1oz/jLBoCxd3LAJT8QorLPVZFqCJ5B5s3Fg0WDrUbvBpWoOgNuOuSSSRyAU9WRm1POblAo4Lu9HIknGtJrA9FmopOhMJYKFIllbFAtFRXh9mbJyEdDssqGCxNhAQ4IggsAc8BSpKQQ7du2axgdaLC7vy365AOlUuiyYCkAEEoJtKAHV40BOgsgj2qF5OWo9Kq9rGpnYqwpTh9m1pLfPknT0P9jah8f/7OMRpgAoMn11MGGUBWY9uNPMhbrx9l08rYN/y+d9e35E3CVf/+DS8JT+sqE4a67qNWygsRuaisg/kZgrctywRCIkyKVUZFY5ZLAAACFGGzrIL1oB2dA4BCpg7etVXU5DCWLooFuF7IUQgwhiH6FpJwP4ethKQR8xSCEFNar9wAl0BCiKs6YiWYYe5YzpPKlaQlVofuErEN0uVdLElVLnmAiyx9Xs7UrlAtobZSq13rGr4384xmjg8ix2fH+cMUF65OX/9sXt///8Z6smfzYpEhx2d5T4bo//7OMR3gArYrVG1kwAicaVr9zLwAnvNa45VA1UEkpNOAMBkozEzfN5tFZOw5sx+X5nCuZf+dNKf52E/35z+eZOhZubmTpTSq6Z/Kpp/p8I5ew/u8Uz5ZTLNPf08nSsIcICEi5/V9udmaWdGdpsYsqwjC0EX43i/HR8HStD1n9ExjQR0u8WyTIQEkmSeaeC2TkqjTAoDA/CoCCpkYBSKhIEiwOjH4tVGKF2A5ArRCZYBiWhz+l3sNAqdIoW1i40Fh53QvyT1DAAMBN24AwrzHIgVTRxqcOMIBP/7OMRfAErhO3NcYYA5TgssoPSYEqP0zZUcNPkhrWfOS73FmpI887lLDjUsuyysTgl2P+BBxIeaMsiuM4l361EXZ3Yz5f6d7G3PN//i2/+XKP3w73bAggANrX8AZ/H6ZAAOTR0Q1tLvYgC4oYRjhqT1/BBEnewrJDQIkoGKQQi5ZAAH/5liWaF8uKdahLb8pfuY4w3OEFB7sMlg1QrF4oLEXmg8/6TflnBcBAAJ1GasDGyTYIVJF7WhTlFSQ7G4TPuG7Tit/I4iCBgOXBtiBDwv8MqXSkRMvP/7OMRrAApofVVMpEXJVpSqaaSM6E0XyqN0cwZpZRJs8cafHSUm6BuaJmo7iHFYq6ikakCNTY4bImv0kspmiSLVOpk3d/6TdBJKttG2y1LOPRKoHdk/W8Ih37xCIPkAA3ESSm05LZarWAwGADxaHizQAecB+wAGEIcEU3LS3TBvPC+0WeKbGMMCdJqBcC7HRwlhDQOiYGozGpdJUdhkdRE7HqFrErKA7hAhyGRDLhfHlKRmMOHLF8rC/m6Ab5opI2l5iiXTU+ibo0JKFw0HmYGiVzVaq6aS1P/7OMR4AA7Q/Vk1qQAyebIr9zLQA8tJlrGAErdNEvvQQ////+gdNy/TQQQJT/////zSU0GZNyUNBM8sdPM/tuwCEkBAJKMABy1+k9yIAOtGWXqYxWHog27KGWPQ13UWUBMy4nMwqltIWb7o0llxLeVqfEkQ1RMKKjz/OoVT/clO3PKwYsWNGrF+NbVcO6vaojMuIMXLbllv//9Wx0YxQWdxf/bY4PoWa6/zCjf////q9nj5hwH0Sj/w5oXr6/NfXWPf6///+/8MjFTT9gium+PE7vlCmyQUd//7OMRPABPJU2W5h4AJXSWt95hQBgJWNpNpJpFQBKPyYFBwUgICJ5tCuw8hLkW1McoRGOwiHBpBEhmYXKQfLKyOUpnqjVI5bSqPFKEIxmMxWERgttGf/4if/5zCxREsguw1v/L/XuPf/9fCwYUKplSUklIHh1whjWhI18Dp3vTCtu1f2XydiocXNCr4hwgxiHYZLu/EV0BgZoTuCI0dCQi1LdXYh303tTI1CVU/f/n6/IS//ffUDd7PLqiDn1reB8mABQAADakApojCePx2723Qn00ineIaj//7OMQ1gAqFLWdGDFFRnZnsKPMmmIUCHmjnmM8sp1K8s9kuVscpc1o1ZHYjS2t960Nme2ZOqZ2d/lTdIRVNGEJIWvquvXSnEsm5GiTR4gcGgs1gooJmlHw6tj/kKF9m8RvD9tvQtQGFSSWiSg5wJApkae8F14yIIsUUwdAjrKLk2zNh0KXiGyhu81cznM+ctRMK1yseZS+9ICxqsxadZL2N/+pnlbm6lahvNUv/y+b16DqDS5IQ1uU58EDxkauWncFYi6Hlmnxf5p70QipZk+c1eoV3wZAK6//7OMQ5AArRRWOnmEfBVxurQYSOUKb4nPtAAGRddocIygrXGDGqlgMRyHtHRB3AzEE7+pPv/WypiDoGjzaI5o9c/xH/eNEBI0afODfVZ1qVCdMDYJKRacAdILcdoly2xH7w0+gmkigo+pOInkZb93vcmd7vOUwCVObZVcrOz73s29US7vbrbR+1Wf5lcyoiR3Lg6KxWJwZ+GHaxsVrY4XKIct+GQQcgCVRxxqSscR4MawDhdriyGKp5LRlVHynLAhhztKo2w0UeDgFTncwsWVHmKPMv+UHMjP/7OMREAErY522nmEfhS5NuNPMgfGxJMIUIYiHHhqyweIico8lomUH11BolYy6OQ//+36s2VJIAAx2gytwGY8JEE1h/I72isy+kqdf+U092h8+sQYvRRtHW3P+nsEihm26du6gQOvsU4TnwfLmhpQQU1KH4+4Q1E2kIqGj0EQod8p6WMW///nQaOsGmAlbm5Jc5HNdLrt/wKAGX2AcpxRelwOIOEMZAwCW6ejdrDp3HGo4xJVQfSePkLgOQOFRsKGm+pmeRUFufSHUx1YmGaKeorpMy9k3gw//7OMRQgAqocVp1lIACgCcudzDwAkyklzPCRzehDWfp0zOlY/+LdqOqOz63mjLpQopoYV5/C7d5MTfyKmu9qfDhvyUj1c6Rnv+E5r9TxY2YDfT86tfsM71vYWDP+afFtv9zQLaif//S+ioC/UoBBAADn4ARDe5GRxjedSMJe+Jt1lsWiO6aHJZfs8fKVhUtScMj0rXrCuGbKwyREblUsD6LCy51+pWfMFkcGFTbpSaesSHHhq9zUCsRLRLqFCu8l+YOs1yyOcCI/f799rUsjbl7q1aRdX/xq//7OMQ3ABQZcV85h4AKECaqQzLwAOOoJr0p3lMqjeo6trCxX2pWDt9nOI+dWzTGN/0gOd/qSJH/ePKf+HCq41gxZNZiwj/znNForUPIFbIUVFrnHZYs123Fp5A+0WgebmFYhTFGP9RraumYbTHOEQW+23rk2RXsF8mDQcJ5mZqrNLu1cUlV89WxUPpsvq79cZzT11VC2fqJKqM7zj/9fWvl16b+v/n0jwKbix9ZZ7Y3/8/H/+//9/f//ZMZ16YxR5KB1//+IAJBMNlgXgzgAP4E7HXEMZYb3P/7OMQGAAx4+165hIABXwost57wAN7FZnGU42JVdryeBI0Z60hU4FxCPB/y16MVHTLKGM2hwfRFN8CGV1CH8kZO8VryTPJUaitu+vnl25bLY5iH/Ys+t+56nC/P3/d+8v198aZgBlp1+zU7LEQE2wIAQAUxAO0UlQnWqMwT5SBJxJENju3+26Uu5Ng0BX1IsXswPoMZ1IrGNie0h3nNCcWFRcXcJ72qYAHCc4LvABlAIQfBAAHAgogj/RSxBzm0i7f//8H6AdBRAQKISUAhAOVHblXZ5ICq5P/7OMQJgArMtWenmGlhVxUs6PYMEBDSZJSScGhr4LmGyTG/MKAtqFUiOsd0nlDQTL6yTZv9WbqqTRVVdmYCXgYGV4lSIjzf1bBE9QFBrEoSeS89/BoGjangDgAASnNgDDEoDIxKzSo8gcIlwwKqcc8nMDGF4dtzSE+5onxL1k4lPiXYg5p95wnQHFCiwhlSgIToB81FR1At4RAjEQcF0aRaC7EkD9oEaLOvrlyDx1UuR5yRptuOQH4SZPLK6bqSeCxY8HW31UFgbcyj4+dSiJUmeoqU5mLR0P/7OMQUgAqcx3+08oAyLycsdzDwAqZGQ0rIZGRyt+dOIx7Mkk8bf3GAjIXODusMHXssd44LvLVBpnYVctYxyMjUAJYmpUmUym0243IAAADhvksy4P+aBGmRMaUsNZB5kvhNVKyHYdOwxwGkEChivN1nfnCoGtjcVW6gRI1aK+WRziUXm+Wa+pGFTTWiNa7Wm9jrSbEHT7eL+A9zLLTy30/vrTlhxzrfr879oLfV7beaUf3n1re833/vX8Knz3mvmuvZ98wXK29f/X1rwbIXITNV7RF82wWLUv/7OMQFgAwBGV4ZlYABfpxrlzKAAKjdPnl2KyenmpPGk2tBHNDAy3G5w0LC2zQijpGO2WrJzfwiik6X1Ut2QzNDg7z+7ksKXP/muO32x99xkli6rUa7n//633T38vez+Ja1tcIuK//+9uoYDjSJgmUlISejgHao0y+pl2EZzN7eEG3xehAwWEXJlQHgSicQtlSjHsPTwIBGlV/PdxiknFJXpGv8I99pIjohTg2G3///mV13+aNWXNFAr+Un00QKoDRa3/b/KA0+K2UtMrQaOcLN7pMd2XJb1//7OMQHAAy0w1IZl4ABhaMrQzCAAPIw+s45LxtMhmUHOuYCXgvlcSqM5tyHN2Oc6hZh+rTVumqP5GK0J+nWGDNNFj0tiaA/qpZaMLyCx28H+rDj+FjH+/q01761qLkK7vw2wwlzhn/6QOiqnKnvqqR6swUQFZpL+ZS6j3uly1Wk9kFwMce/QiiEHALb9JwkCcHD7OD2W7+hRhZbceSIKCs1xLl2ZToKg4HoNlj5amqP//LFh0zNzaKbTLH/////x/MLFjwGAmvOrI/+JcQskP3t+2uu2ttE9v/7OMQFAAv48X25hAARdZNuZxiAAO1AAAB21vkkH7cPJu8PN9D6qLWq9N2tF5ywWj3OHAsGmlSiH7hKLh9PYqh4dj1mlgqP/REPjiV4aJ//9K3f+LmfbVf+6ub9x8c/Hbkw/EUwDSNyT9h7DDnjTDRTjgkALC+B8fg5EZWOkaAdr+4wPIF9oKB2IoefGH7AIDxa0pzA/EMeYTax3xRiJlRpalFnv3doiYxnLBwVaYFs5IBCWcBDThALoD+7QeI33Hx6v/+fz/n0qgm2pGiCnFLhiM7GZUTMtP/7OMQHgAqou328koABWBFuWJMM+EQo0QIAucIAfhIcHBQLQPCJRgmjCqM9nscchkNUpREpXRl1Q39X7Lxh0/0GPEfFGQPbcUhCyr04V3AqjrbNPDJce/SIHUtDAMq0IioAuhISQzxo3RPIhKZXWtPQcTUG01UOvW8Tx4yKEuUmxuCJml4e98EguIwGdSAVAuaFGkBQQuWRBQuGkARyHi63B163q471KSys06m+24lS2uqGppimkk4EMWNPONHy5MOKRNEspo/xqAjRmek3IHrm0bpvFEUkif/7OMQTAAqoiX9GGG8RU6CuHJMJOBxhabdHaLlK4gmsnBNOnheodWGA2sLb1uPIVlTvFzvMXW8jXkNBKpC6pUqdufCyRAAABRwEgSRCFaZAK5kioIEV4CyaxBNNkTUUrN2TKmm1hVGNdY7HbtGarK52OVrV52H9H1Ql5JHT/GzNZX9JK4IWpWUMwlCBc6SJIdpkGtyH6iP6yFUAGoAqGoBOH5B5siKIUn2+DKGBtsTE0pHiIMTR8PB5gwIHnDFU0CwuAdYNsCE3KVgAPiyJhSAs6Su0TQJK2P/7OMQfAAnYXXBEmFIBTJ7uGMMJcIuhxLW9+pKSCpHtre8TNEBxKBoMwOIuVE1DQjFiq91DBDDi65ei5tZhWek28b8ayJloH2SPbzmTGdntitdDlZ3J6XWqOYioZVapMOgZgRerf/B/7cIEjf9YCcZFWfawJDTIdCAprmnWi5cBg02gitAyw955ChX0oxq9TdSTTEWvU1tpiqUDx6R5H8DRjOCddTalQmRPtW6a95flyi1UciUP+Hgwtsmt95H7HP1tGigLAy7sWV1PISyW7SSSRtOChwHSfv/7OMQvgApczXlEjFYBWAwy9JSYNrpQgwcGihKWCwbTtziIZW1Z+sm7bTfbXN0hBZ9kUBIqNMiIPgEmKPFwKKyxQioWMjRY9FHXZEtQaLv6/4AKl2k2Gux4f+JkayArBmkAgkpuALyExYgUo+QEIQZyFGQ1FqI0h7Eo8zT3UpEuqmCM7Obp1MdlSjlMslmty7Eeb+m3hZ6nb99y0mHEQ0ceSHmEd7Bdr0AEsFVDoZaow7qJPyRAAqOhoFtmyQDrK6Aw0QA2s2hN4JV6kiBphQhe01NiBtxyJ//7OMQ8gArY93VEmEfBVShu9JGKWMKygnoIto/hJg3Y6XlGDaFglb/b2oRNJGC7mCyiy//8tTPzsKszf+Rf9KhHRvH+S1LWFSAAATg1zgfspCVTFRVmLZAPDDAfIh0QmAKB8ePqEZlrGmaa9lJhSOYu+vpe0E7bS0TlYHFhGTB7zi7oiDganwyIDIk/h0o4kOaaDchTb9TlcUf+KNUoFfwQki7sCQpR1z+rwXKidZGiEzZsVfuMragayOUytroCmOaRlIYwYdLCbI7IZZ5D/z6/bbobuzu9X//7OMRIAAq4eWrHpMPBUDFuqPSIeJn2/bIV1f+rfT69rO3ZXpc4ZEUnrT/10IHdAFqBSiVm84vWYUmLaUnL1KM5dueg3HcOGSYwBo/1pG/8bggKcQgWIEHwRXlMY2h1OadLql6rVHKad30uujObVFRHlo6Fzf9qXVv/6V9f//+v///w8r03LqzUgij8BssJHzm1HEhzsIsUnwQ2chiUIJkzSk1Oqb2u+pSPg1a6K93Z3B8dHfo7Kf7EH0Pd9inMxXYsS5ZSN/B5vQfnBxOekVuljLzy2Hif+f/7OMRUgAqlh2pHsEXJVKDv5MMI/urVjcaiTaSajbAjT97UwwemPJqQCLHKwo4Zr1gzZDTISERz3dC8s73bT7vV3xzG6CgOVkg4x0Mk7Qk+Gm1Ig0BjRAIij2Hp4VfGjAMKJaoUOFGq+1WyWNEJwCASGogBOlhQh4KidAISBUHZSQkEThZZaJAWI+u+El0/S0SptnQ3fh4On6H8fYJ2cPilPVldU9PRp53SdyP0vsjzu8m7f//eZJR5NSnXeRKflCCiVARURh5mMhh4S41KFB4U1GBXrN7Ukf/7OMRggAq0mYenmEPxUScuKJGKnFm1VdeGO5jFG543YrXsCHmGwRjPF3tbjVv/hQdOB88oRHACaAjV0puKBoimk7ivTDv/sWNCrH/qYe+oKhkDABABMDIMZPxklT7UKgTuJ0Ylp7GRRIEOtQCBActfVf0iSAzpSigccMUSJCCHIqtrYLjhziD3rIZcx+prj4fY0TqRY4xD5ka19Xkm/4dqJWQUEIkmAQxYbkv1KvbnIYZSAQcYWSm5C5QSyw3dttPd9t3lHDYRKR6XbatYqCocofXzGQ0XeP/7OMRtAAqAg3UsPMOxOQ5uXPSMfuKyvmQnFIWEaXAycs+KuPCfDJNgRLtDNEsTOcvlNvyAF0BIyjApqWaTAepjkzwTMPG4dlq1Yp1UoiEeZRxkSB4QRKie1zac+JYo/L/yDMopnMqNgisLCAzAAglwNKZA2Gili/hyJ3h5Yo7J+IOngWv5Rh9BP5ABgAASSU4CeCBDIrCQ2uJg+LTtOBJHnkw590wtJndwVto6dy+Uk+vmzT7KM8cmgs8SgvaJZUWChkBOS4CkPkpG1bnSBHFFu/CILnxd8P/7OMR9AArUwXVGGKnxWZku5MSNbsJtFHqIsyjGkAiUjHeAfTIknUBpQaQ00GERRtJmhQxAbaRigSo1yvUcyGYkDQCgGZk887Nj3zwgulT6gQyr6WDWr4coAokHvPnTgqKJd2b7FVjtrzao3Mo5YOSEWehAABAcvArWTTLOBqAWTiCexnR4DtIHCUQVK0zuihK2ugpxDEdq0Cm6m2HyKQU/OCZhkcWBh1DHTFLPYWbchbk1+/3YokJBtYIqT2NvkBdJwfCahdQZAAwUhNqNgeB8KFkZVRAa+//7OMSIAQrAbW1HsMCRVA/tXPSMuE6OQIiSaCRbXGmzHPL1tyin+J5JyoVtkdC+q2Y4U/RHMEzUG6lS7q6VvOrla/tb2alXx/LZ2szMR6O679foZOu8Jb+lNdA+AI8YlttuAUshKTZO+q4scSkVhbV12U/aajwYLht7UhJ2mKWquUmU0fYnQC7CKjjwQYT0PWH7sK0Qo3cqbFf5L/ujprLXbMslG02bvzV+37vl2prz9v6Po0SqCAAJuSgyNRrXjIkxJKYFh2OEKFEncWWV0LxidPAwE7AYgf/7OMSUAAqgYWjsMMPBWypuKPMJNAJuh0GhWucME+4548FSAwsIHJwMNMGqTDsEG1l2uKH5uDJIOkQSLguEAEnKetSp9Z11X+qIheoyOqDgwQC61ggBQzSqAoILA5foDAgcEq3l7F4SCJs5YAwwZDCoAlx+RdEu4p5nTOXdfrSHKAGlPO0NnbRrTuzMLfKPufk119oUyd3uSicelx7e34i+oVSgV9Qv1AGyBYzykV9q15jN/+lWFSHHCjGMLIRkcxf/1Mqg/Mr7tTZM3R/qoYc4G+KRcqY+bP/7OMSfgAs9h3FHjFNpYY0s3YYMcNhgEUAktOQAgIMlAsIg5XZVDC10eLKsRVJADM1OY44JhAIEBSV4iF1QOA2VYeCJa0xrTR3mWszBkLIJU+rtP6sJF0x0sIBKFVf4eDo9dOigKTCORf481nCmMn/Xnl/JXb+TbnI4DmqyPuM09F9rO81uYOOg63q8sSjjHqwojT/4oXKH/qS/Udvc5c4nPX+c//dRATk1AAHBSwL2jSAEqqg2IO2SODujFRZ5CCyXZVCEKFSu2g+ARhpEiQ4iTTHEbYq4Cv/7OMSng5G5R1ANpFpCTLFqDbYe2VSdDV7kUcd0Iy5DK6hbNiDAsCsGohmYHLNlcdelINkEeNgWeMopuAgf1BcFZZQyUYnBTH68zLX5Zd7JNUo5PD6LxOM/iYYw3z3NJGHkRMTGp7//+do/k48RJ/1ZZrZ3///qNyDgAlS4EYHoAbyYJk3C+H+IApFUpw/V9tRjOr0YhKeR64ZFYrtomZLvVdBiKmGww26u/LM9hRs6Yr3p70jSw1Pm9ofzAgzS41lu1ZPjU/8qNS4bioAUyxgoVeouhajtUP/7OMR4gxJNi1JMMPbCAzEsDPOXgDzh4sRIQPhwfk5Cvf0IQhmnaLajup8inMQUITxN///sAIqqAAAKoIOnY4l0vmp9OqFLTFsPMjY1JAgx1mSMQ8wBxjflWiws5eSZOLAWA+kyhB9qZFnK1PlYkVtjVzHr2pXWYTHfN9tzFNAXLW+o8epr5X9XccvjNErXon/9KdJQX5uxBED+a/gf8fLTKPLT8Nd/8echz9EMPX9PT/T4LVkOqeSzyL/+T8zo4AycPCAJBdk4HINRVXgp978MLDxWVUTuQ//7OMRQARFZcVhsPQ3J0LEsqYSp6Xg4+EEMoXJidYFDI0TmUC5bVIImELCrDHzUOO7rXyM9ZW3+DGajlUbLT+ShzPFzf1JB6YIovFFTf/9DHci9rLbnopyKqPW5hu033XVDUqaY8wxn9swwkNU9zlMMYsfJBIAAFv+zAlQ/G0uS2qzvb3BdAWGSVtkRoQgJCm65YvSSyqGS0stiWQaMLXI8kz3NJvIFGrKRP8odwuwhJDQbDjv6lhWEWPxaMHznv//EsXEgrCJVrT6l9S5qVTcnPnupPzf76v/7OMQyAQ5JhWlHpUfJ5J6rSYZCkOh6KecxVV/+nNmE5VIOgBpgl+lugaXDfpAbDKQ7QWKs2ZeEAm06Hsjr/NZbVE+KUy/4u0mPPo1Gga1LYdUIKxM06KrHLvuQXHiN/bxet29qS3szX1InF6hlQoHVGL//MRzSqmXzczMm/+mkio7UXzEF4SlStwRcIgEB4d11vYJRE8n/W6EwVeomALTYEkPRtbGNwZ7xG6zCCs4Gx5ZilkB+xo8o4muKajDYOvS/r3YacMMz8izrru9ucvPFwFouP89/0P/7OMQdgA2tj27HoUvxwajs3PWOOoBHHxCeQmCu3/3PLErSYuphyPab1RZmisiasp51kqYylBiTj1GITfYivdW/7PoULqNSgQASm5KAMYTJeFg7TpOpLqFDroeutuV0mzv685CASOItPutR6yh955VaK5L6jOHTrzU7DvTPbYtQ2slXorfwcNggh/BodOe9/qJoOglMcjP/sv+Yex76yBCupTpw+PBoVfxlMiPDf/BHaQr/5Q5ggGIAptzAEOjziOh8qlpX1O9+rHOFIdDixwb5YRILZUUKM//7OMQQAA25jWhnoPHZirDu5MQWL5WsrXA+L6UXtLm27Wi7vGRlNf5dfwWeCAV/w/JXyR/w50L1ZSxpxaTC9XHPb9dXRqs3//x0uYWlSSsWPSu88x+zdEGkcKBm/BeDseDlaHWSVa+8A4gl1MXRNVFNelXJ1yrWX3lBbLB8QcSOUzHsPoc7N0K2US1Rld2aJ2Wli1Hwi//v/2gIN1GB6hhxwWMQ8zjJwUiqh1q0pLcxlab3fq9tl3/oVtFUp5f/k/62pyC01RZEWJcbbgA0YAfWlqIzNz9j4//7OMQJAAyBh3VGLFT5kSltKPMptoHIe2Bbns5K7tstYjXNsOuUZHsaSdsNZbaQ+UzsrMQe//Ywdr/4D4BL/ggJ1NQCfI7qVlLKRKuyHOV2+ehGN0I5HcqaEKz+r/wFf/y//WXwqGQAkAAEoigACVGoYjm5TNSJEeTrTAXc0paQwJ0DCtuzY6DIeCCg3prbVxq95Zz6L7k7MMgyIIfKKhfVzgUDfyMW3Q44eD8uIAeKK4rjimNKP8o66mf77nfY41K2X2/9XKj48eNkFRrFVKbjjgFR0LU52P/7OMQGAAxQ5XNGGWvxgyjt2PQKPvpNLBRErmBE5RA0noJ5TIwe6nipNejo5hIa4dLHFO/C0PKPJC96ef8nLhnq0QQcr/zCanLjQwKEOohjXMX5042T2gLk1CMqdnJUy+dXVy8TEDbtyn/Uh+It/gO85mIn6hOdTIUxP4iKY22HFbrM22eAct3ZJQ9RmdcpZsQw7OQylGtc+N2lZ//c0Zl/KjAYm/8O6lA6Ds27EYbwzKuclDXuolFqVpfIFOMXBH6Fe/tkZ/8rcwv8qtUIJAJScBDGpHqpkf/7OMQFgAwdQ2znpKm5firs2PMV5qorxfUSTBVgQqKoWkmkky8aSdQZRdUgaG0DhTKJqDzKrtM6FSv55C1t6jgR/LIYwmV7PZBUU2MdkOOVnLqq1LF6l+p+n/y//FYzOAjBKOe/j6bYrbk6CAAGsBpBksR1mgpWsnyGJBmWIUSdPtUYiw4LWsLaAUmmaxMjaz2MFtPK9TSVwbUUI07oSld1IdzndTP+XQyNKrQxvESVH9X6eHX/xDq0l1Ov//VSncXoQUFi1OhfOvKqAAKcYCm2mMSZ08jLVf/7OMQGgQxJRV5sJK9RgCps6PSdcuPE0iZeSVuTMPqzCC3bKTCZIGjSEl0FRQhpElbe3HyPSRypfsb/1/bLD9S37+al0QRFHxsD2+jdXGPx57bpJuesw4e7fow76yE//9h5FqBEdrHHMpqIBBJTkoE8joRGKNiVCJlTKJXVRQIyQ0KxkBTg0Rs3acETosSyF/YoXl8gSbLf1LZiIxypRqNVdJhUjuPjUJHfy2uqm1HFOZzY5i4n36hGZN/+1XQ/7f/UbOcQ8e8hyGWqygEqwD+McaBdUbM2OP/7OMQGgAtJR2rHmK2xVKkuGJMJvhrNivi9UWKkYT2FCvOk0MPdsSympCGOdNnvYi4CaJuARrU9Sh0Ix01e4dScIiQWORjLlW7ybSqyOb9KvayjhR7/Xp9k/Rpmq5MSVlHkd5rTWAAQDAgaeQCYRBrDnPI0nP8rZBJMaipyZgSVR60SVp4ikyTJH+oyopGZU6fze67w2+852tbzFYur6nLJr+juRmX00M5fMb1b/ZdudpaEMXRBEhUKIBJSUAuYTL1SNsZIOmlX1YLsjk71rrz10jbmFIkQcv/7OMQQAAttU2znmLDxdKouqJMVpp00j2G2kUdR2+YiMcPi7sZa/VuRVaQOCJHQIn+8l92/1ONFUb/53/EsedH/o8jfr3ZndReUTf/Eb7qyArVLEoyNwASfHkRk0YDxoUrGAr4hRNNyRycbBVMFoPpgc8wYQLiWQ7I5kq4sgsLJ/fsq9JRwuPdH0TAMDPURLz+NAkTAEv7+IP/qNMJP+gx1D7f/2OFlUDij/+bYlQUnJMBPixPXpsUWYBpyyIY2gH7tJEw3RrIulWluzU8VrGnszFIxCmKzsv/7OMQVAApZCWxnmEfRWijuaPGVvjxuehjK2RVGKP/U5X/hCc8rKPaS50d2OY/+IJHRYmqLqd9KRh//1ISoTUAQUkkoCrZIi2waO5D1DM+xP6igtDYQWiODwjhRYsE/0bQbtrUkLTg1AZR7/q6a5EzGDGCqPnSZCMe2ro3/1Tp7X/IXbK1WUVVCp/7cRWIP6IrW06SVgGKq2AahKk8hyXs8hPFFJUM5IhHRoDGvAQC2ZZOkMPKR6xlo2tTc06GHJJ0XpTTa3/QvInKzsA1CxuLNWW/ay2s+eP/7OMQhgApUo2zHmEvx57GsDMGa4yqyqj8r0eRhkCBen+JqWXAApN0AkOIqEYtYXeMWCuaxPCotpCckRlIRl0bq54OjtqtXortasbWuiWUkBotQU3tZ5l/kc+fwxJoZPCeEzGlMqS4YzSxHhpTR/48oDKy22H2H2JUm2W2W2w+xOw+a0W2XWw7xOw+W2W2W2waPBDR4IagDnDAc4YT2dbgAEBcjloCx4DCOJDAhYloiUot3ZKESSyk1TW0UNFMV7skllsimOd8xVFKimOZ2Sf/+llJq3f/81f/7OMQcg8qEG1NBiGJIAAA0gAAABJnd20UrGrM7u2ilYxlJopiqKVjUpNW7aKVjUqpMQU1FMy4xMDCqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqg==';
+let gearBuf = null, gearLoading = false;
+function loadGearSfx(){
+  if (gearBuf || gearLoading || !GEAR_SFX) return;
+  const a = audio(); if (!a) return;
+  gearLoading = true;
+  try {
+    const bin = atob(GEAR_SFX.split(',')[1] || '');
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    a.decodeAudioData(arr.buffer).then(b => { gearBuf = b; gearLoading = false; }, () => { gearLoading = false; });
+  } catch(e) { gearLoading = false; }
+}
+/* 播放真实齿轮音；没准备好就返回 false，让调用方用合成音兜底 */
+function playGearSfx(){
+  if (!state.settings.sound) return false;
+  if (!GEAR_SFX) return false;
+  const a = audio(); if (!a) return false;
+  if (!gearBuf) { loadGearSfx(); return false; }
+  try {
+    const src = a.createBufferSource(), g = a.createGain();
+    src.buffer = gearBuf; g.gain.value = 0.55;
+    src.connect(g); g.connect(a.destination);
+    src.start();
+    return true;
+  } catch(e) { return false; }
+}
+/* 法轮「齿轮」声（兜底）：低频咔 + 一段金属齿的短噪声 */
+function gearTick(){
+  if (!state.settings.sound) return;
+  const a = audio(); if (!a) return;
+  try {
+    const t = a.currentTime;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = 'square';
+    o.frequency.setValueAtTime(210, t);
+    o.frequency.exponentialRampToValueAtTime(72, t + 0.055);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.055, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.075);
+    o.connect(g); g.connect(a.destination);
+    o.start(t); o.stop(t + 0.09);
+
+    const len = Math.max(1, Math.floor(a.sampleRate * 0.032));
+    const buf = a.createBuffer(1, len, a.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    const src = a.createBufferSource(); src.buffer = buf;
+    const bp = a.createBiquadFilter(); bp.type = 'bandpass';
+    bp.frequency.value = 2300; bp.Q.value = 1.1;
+    const ng = a.createGain(); ng.gain.value = 0.045;
+    src.connect(bp); bp.connect(ng); ng.connect(a.destination);
+    src.start(t);
+  } catch(e){}
+}
+function winSound(){
+  if (!state.settings.sound) return;
+  [[0, 660], [95, 880], [195, 1180]].forEach(p => setTimeout(() => beep(p[1], 0.24, 'triangle', 0.055), p[0]));
+}
+function vibrate(pattern){ if (state.settings.vibrate && navigator.vibrate) { try { navigator.vibrate(pattern); } catch(e){} } }
+
+/* ============================== 旋转 ============================== */
+function setResult(text, pop){
+  resultEl.textContent = text;
+  resultEl.classList.toggle('small', String(text).length > 7);
+  if (pop !== false) {
+    resultEl.classList.remove('pop');
+    void resultEl.offsetWidth;
+    resultEl.classList.add('pop');
+  }
+}
+/* 旋转过程中标题实时跟随指针所指的扇区 */
+function setLiveText(text){
+  resultEl.textContent = text;
+  resultEl.classList.toggle('small', String(text).length > 7);
+}
+function beginRolling(){ resultEl.classList.add('rolling'); }
+function endRolling(){ resultEl.classList.remove('rolling'); }
+/* ---------------- 旋转的物理效果（设置里可选） ---------------- */
+const SPIN_FX = [
+  ['none',   '平稳', '不晃，最安静'],
+  ['bounce', '颠簸', '像轮子碾过小石子，一下一下地弹（落地还会轻微压扁）'],
+  ['drum2d', '2D滚筒', '在平面里绕着上/下/左/右滚一圈，像盘子在桌上打转'],
+  ['drum',   '3D滚筒', '每转一圈朝外翻出去一次（3D 透视 + 倾角轴绕圈的立体翻滚）'],
+  ['settle', '收势', '慢下来时来回摆几下，再稳稳停住']
+];
+let fxReduced = false;
+try { fxReduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch(e){}
+const FX_2D_TURNS_PER_SEC = 1.5;   // 2D滚筒：每秒滚几圈（想更快/更慢改这里）
+const FX_3D_TURNS_PER_SEC = 1.1;   // 3D滚筒：每秒翻几圈
+let fxDur = 4.2;                   // 本次旋转时长（秒），由 animateSpin 写入
+function spinFxKey(){
+  const k = state.settings.spinFx || 'bounce';
+  return SPIN_FX.some(x => x[0] === k) ? k : 'bounce';
+}
+/* 每帧按当前角度/进度给转盘加一点位移旋转，t 是 0~1 的进度 */
+function applySpinFx(t){
+  if (fxReduced || !wheelWrap) return;
+  const fx = spinFxKey();
+  if (fx === 'none') { wheelWrap.style.transform = ''; return; }
+  const damp = 1 - Math.pow(t, 2.6);                 // 越接近停下越收敛
+  let tr = '';
+  if (fx === 'bounce') {                             // 颠簸：一下一下弹，落地轻微压扁
+    const b = Math.pow(Math.abs(Math.sin(rot * 1.9)), 0.65);
+    tr = 'translateY(' + (-11 * b * damp).toFixed(2) + 'px)' +
+         ' scale(' + (1 + b * 0.014 * damp).toFixed(4) + ',' + (1 - b * 0.022 * damp).toFixed(4) + ')' +
+         ' rotate(' + (b * 0.9 * damp).toFixed(3) + 'deg)';
+  } else if (fx === 'drum2d') {                      // 2D滚筒：平面内绕上/下/左/右连续滚圈
+    /* 相位按「每秒固定圈数」推进（再乘一个温和的缓出），所以滚动速度跟转盘自转的
+       圈数脱钩：转盘转 8 圈还是 20 圈，滚筒都是一样的快慢节奏；缓出用的是 1.35
+       这种很轻的指数，开头不会像 3.4 那样每帧跳几十度（那会看着不丝滑） */
+    const ease = 1 - Math.pow(1 - t, 1.35);
+    const ph = ease * Math.PI * 2 * FX_2D_TURNS_PER_SEC * fxDur;
+    const r = 26 * damp;                             // 偏转半径
+    const x = Math.cos(ph) * r, y = Math.sin(ph) * r * 0.74;
+    tr = 'translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px)' +
+         ' rotate(' + (Math.sin(ph) * 4 * damp).toFixed(3) + 'deg)' +
+         ' scale(' + (1 + Math.cos(ph) * 0.018 * damp).toFixed(4) + ')';
+  } else if (fx === 'drum') {                        // 3D滚筒：每转一圈朝外翻滚一次（3D）
+    /* 和 2D 一样按「每秒固定圈数」驱动：原来的相位直接取自转角度，而转盘每帧自转几十度，
+       sin/cos 被欠采样成乱跳的值，翻滚看着就是一顿一顿的 */
+    const ease = 1 - Math.pow(1 - t, 1.35);
+    const ph = ease * Math.PI * 2 * FX_3D_TURNS_PER_SEC * fxDur;
+    const s = Math.sin(ph);                          // 翻滚量：一圈一次
+    const lift = Math.abs(s);
+    const tilt = s * 24 * damp;                      // 倾角（朝观察者翻出去）
+    const axis = ph * 0.45;                          // 倾角轴慢慢绕圈 → 硬币旋摆的立体感
+    const ax = Math.cos(axis).toFixed(3), ay = Math.sin(axis).toFixed(3);
+    tr = 'perspective(560px)' +
+         ' rotate3d(' + ax + ',' + ay + ',0,' + tilt.toFixed(2) + 'deg)' +
+         ' rotateY(' + (Math.cos(ph) * 7 * damp).toFixed(2) + 'deg)' +
+         ' translateY(' + (-13 * lift * damp).toFixed(2) + 'px)' +
+         ' rotate(' + (Math.cos(ph) * 1.8 * damp).toFixed(3) + 'deg)' +
+         ' scale(' + (1 - lift * 0.05 * damp).toFixed(4) + ')';
+  } else if (fx === 'settle') {                      // 收势：慢下来时来回摆几下（峰值在 3/4 处）
+    const env = Math.pow(t, 2.2) * (1 - t) * 6.5;
+    const w = Math.sin(t * 26);
+    tr = 'rotate(' + (w * 6 * env * damp).toFixed(3) + 'deg)' +
+         ' translateY(' + (Math.abs(w) * 9 * env * damp).toFixed(2) + 'px)' +
+         ' scale(' + (1 + Math.abs(w) * 0.01 * env * damp).toFixed(4) + ')';
+  }
+  wheelWrap.style.transform = tr;
+}
+function startSpinFx(){ if (wheelWrap) wheelWrap.style.transition = 'none'; }
+function endSpinFx(){
+  if (!wheelWrap) return;
+  wheelWrap.style.transition = 'transform .34s cubic-bezier(.2,.9,.25,1)';
+  wheelWrap.style.transform = '';
+  setTimeout(() => { if (wheelWrap) wheelWrap.style.transition = ''; }, 380);
+}
+function animateSpin(from, to, dur, secs, liveText){
+  return new Promise(resolve => {
+    const t0 = performance.now();
+    let last = -1;
+    fxDur = Math.max(0.4, dur / 1000);
+    startSpinFx();
+    (function frame(now){
+      const t = clamp((now - t0) / dur, 0, 1);
+      const e = 1 - Math.pow(1 - t, 3.4);
+      rot = from + (to - from) * e;
+      applySpinFx(t);
+      draw();
+      const i = winnerIndex(secs, rot);
+      if (i !== last) {
+        last = i;
+        tickSound();
+        if (liveText) setLiveText(secs[i].opt.label || '（空）');
+      }
+      if (t < 1) requestAnimationFrame(frame);
+      else { rot = norm(to); draw(); endSpinFx(); resolve(); }
+    })(t0);
+  });
+}
+async function spin(){
+  if (spinning) return;
+  clearJump();
+  state.flow.pendingId = '';
+  ui.flowCollapsed = false;
+  renderFlowBar();
+  const w = currentWheel();
+  const opts = activeOptions(w);
+  if (!opts.length) {
+    toast('还没有可抽的选项，先去添加吧');
+    openSheet('manager', 'content');
+    return;
+  }
+  const secs = layoutSectors(opts, w);
+  const idx = pickIndex(opts);
+  spinning = true;
+  document.body.classList.add('spinning');
+  audio();
+  const liveText = opts.length > 1 && !!state.settings.rolling;
+  if (liveText) {
+    beginRolling();
+    // 起手先对齐到指针当前所在的扇区，避免第一帧跳变
+    const cur = winnerIndex(secs, rot);
+    setLiveText((opts[cur] || {}).label || '（空）');
+  } else {
+    endRolling();
+    setResult('？', false);
+  }
+
+  const jitter = (Math.random() * 0.64 - 0.32) * secs[idx].span;
+  const target = -Math.PI / 2 - secs[idx].start - secs[idx].span / 2 + jitter;
+  const from = rot;
+  const turns = opts.length === 1 ? 2 : 5 + Math.floor(Math.random() * 3);
+  const to = from + turns * TAU + norm(target - from);
+  const dur = (opts.length === 1 ? 1.6 : clamp(num(state.settings.duration) || 4.2, 1, 12)) * 1000;
+
+  await animateSpin(from, to, dur, secs, liveText);
+  endRolling();
+  spinning = false;
+  document.body.classList.remove('spinning');
+
+  const label = opts[idx].label || '（空）';
+  ui.resultLabel = label;
+  ui.resultOptId = opts[idx].id;
+  setResult(label);
+  addHistory(w, label);
+  winSound();
+  vibrate([0, 30, 55, 70]);
+
+  let removed = false;
+  if (w.removeAfterPick && w.options.filter(o => num(o.weight) > 0).length > 1) {
+    const i = w.options.indexOf(opts[idx]);
+    if (i > -1) { w.options.splice(i, 1); removed = true; saveSoon(); }
+  }
+  requestDraw();
+  toast((removed ? '抽中：' + label + '（已移除）' : '抽中：' + label), { action:'复制', fn:() => copyText(label) });
+  applyGrowth(label);                                  // 成长转盘：转为属性提升
+  flowJump(w, opts[idx], label);
+}
+function addHistory(w, label){
+  state.history.unshift({ id:uid(), wheelId:w.id, wheel:w.name, label:label, at:Date.now() });
+  const lim = Math.max(10, num(state.settings.historyLimit) || 50);
+  state.history = state.history.slice(0, lim);
+  saveSoon();
+}
+function fmtTime(t){
+  const d = new Date(t || Date.now());
+  const p = n => String(n).padStart(2, '0');
+  return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+/* ============================== 分支流程 ============================== */
+let jumpTimer = null, arriveTimer = null;
+function wheelById(id){ return state.wheels.filter(w => w.id === id)[0] || null; }
+function optById(wid, oid){ const w = wheelById(wid); return w ? (w.options.filter(o => o.id === oid)[0] || null) : null; }
+function slotText(v){
+  if (!v) return '未设置';
+  if (v === END) return '流程结束';
+  if (v === STAY) return '留在本盘';
+  const t = wheelById(v);
+  return t ? t.name : '（目标已删除）';
+}
+function nextOf(wheel, opt){
+  const v = (opt && opt.next) || (wheel && wheel.next) || '';
+  if (v === END) return { kind:'end' };
+  if (v === STAY) return { kind:'stay' };
+  if (v) {
+    const t = wheelById(v);
+    return t ? { kind:'wheel', id:t.id, wheel:t } : { kind:'none' };
+  }
+  /* 都没设 → 跟随「转盘页的列表顺序」里的下一个普通转盘（分支转盘跳过）；
+     已经是最后一个就收尾。想停在原地请显式设「留在本盘」。 */
+  const alt = wheel ? nextInOrderAfter(wheel.id) : null;
+  if (alt) return { kind:'wheel', id:alt.id, wheel:alt, byOrder:true };
+  return { kind:'end', byOrder:true };
+}
+let chartAutoTimer = null;
+/* 弹出某张维度图，停留几秒后自动收起，然后执行 done（流程继续往下走） */
+function showChartThen(chart, done){
+  if (!chart) { if (done) done(); return; }
+  clearTimeout(chartAutoTimer);
+  setTimeout(() => {
+    if (isOverlayOpen()) { if (done) done(); return; }      // 面板已经开着就不抢焦点
+    ui.chartItem = chart;
+    navTo('chart');
+    toast('本站属性维度图', { action:'关闭', fn:() => navGoBack() });
+    chartAutoTimer = setTimeout(() => {
+      chartAutoTimer = null;
+      if (isOverlayOpen() && ui.view === 'chart') navGoBack();
+      setTimeout(() => { if (done) done(); }, 280);          // 等收起动画走完再继续
+    }, 3400);
+  }, 650);
+}
+/* 位置正好在某个转盘之后的维度图 */
+function chartAfter(wheelId){
+  const hit = (state.charts || []).filter(c => c.after === wheelId);
+  return hit.length ? hit[hit.length - 1] : null;
+}
+/* 流程走完时：如果有维度图，就自动展示（可在设置里关掉「流程结束时弹出属性维度图」） */
+function showChartForEnd(){
+  if (state.settings.chartOnEnd === false) return;
+  const list = state.charts || [];
+  if (!list.length) return;
+  const last = list.slice().sort((a, b) => chartSlotIndex(a) - chartSlotIndex(b))[list.length - 1];   // 位置最靠后的那张
+  showChartThen(last, null);
+}
+/* 给界面用：这个转盘的「默认下一站」实际会去哪儿 */
+function defaultTargetLabel(w){
+  const nx = nextOf(w, null);
+  if (nx.kind === 'wheel') return nx.wheel.name + (nx.byOrder ? '（按列表顺序）' : '');
+  if (nx.kind === 'end') return nx.byOrder ? '流程结束（已是最后一个）' : '流程结束';
+  if (nx.kind === 'stay') return '留在本盘';
+  return '未设置';
+}
+function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
+function clearJump(){
+  if (jumpTimer) { clearTimeout(jumpTimer); jumpTimer = null; }
+  if (arriveTimer) { clearTimeout(arriveTimer); arriveTimer = null; }
+}
+async function switchTo(id, opts){
+  opts = opts || {};
+  const target = wheelById(id);
+  if (!target) return;
+  clearJump();
+  if (id === state.currentId) { if (opts.spin) spin(); return; }
+  const stage = $('.stage');
+  stage.classList.add('fading');
+  await wait(160);
+  state.currentId = id;
+  ui.flowCollapsed = true;              // 跳转后先收起流程条，避免抢视线
+  setResult('？', false);
+  resultEl.classList.remove('small');
+  refreshTitle();
+  requestDraw();
+  save();
+  stage.classList.remove('fading');
+  if (!opts.silent) toast('已跳到「' + target.name + '」');
+  if (opts.spin) arriveTimer = setTimeout(() => { arriveTimer = null; spin(); }, 500);
+}
+function resetFlow(){
+  const f = state.flow;
+  clearJump();
+  f.path = []; f.pendingId = ''; f.finished = false; f.retStack = []; f.paused = false;
+  f.grow = {};                                   // 新一轮：清空成长累计
+  f.roundAt = Date.now();                        // 新的一轮：属性图从这一刻重新算
+  const rootId = (f.rootId && wheelById(f.rootId)) ? f.rootId : state.currentId;
+  save();
+  renderFlowBar();
+  if (rootId !== state.currentId) switchTo(rootId, { silent:true });
+  else toast('已回到起点');
+}
+/* 列表顺序里，某个转盘之后的下一个「非分支」转盘（分支转盘不进默认顺序） */
+function nextInOrderAfter(wheelId){
+  const idx = state.wheels.findIndex(w => w.id === wheelId);
+  if (idx < 0) return null;
+  for (let i = idx + 1; i < state.wheels.length; i++) {
+    if (!state.wheels[i].branch) return state.wheels[i];
+  }
+  return null;
+}
+function flowJump(w, opt, label){
+  const f = state.flow;
+  if (!f.enabled) return;
+  if (!Array.isArray(f.retStack)) f.retStack = [];
+  f.path.push({ wheelId:w.id, wheel:w.name, label:label, at:Date.now() });
+  if (f.path.length > 160) f.path = f.path.slice(-120);
+  ui.flowCollapsed = false;
+
+  const explicit = !!(opt && opt.next);
+  let nx = nextOf(w, opt);
+  /* 分支转盘本身不在默认顺序里：抽完如果没为这个选项设目标，
+     就回到「当初从哪个转盘拐进来的」，接着那个转盘的默认下一站往下走 */
+  if (w.branch && !explicit) {
+    let guard = 0;
+    while (nx.kind === 'none' && f.retStack.length && guard++ < 30) {
+      const back = f.retStack.pop();
+      const origin = back ? wheelById(back.origin) : null;
+      if (!origin) continue;
+      nx = nextOf(origin, null);
+      /* 「接着原转盘的默认顺序」：
+         - 原盘没设默认下一站 → 顺着列表顺序找下一个普通转盘
+         - 原盘的默认下一站就是这条分支自己（或另一个分支）→ 同上，避免自己跳回自己
+         - 只有明确写了「结束」才真的结束 */
+      if (nx.kind === 'none' || (nx.kind === 'wheel' && (nx.wheel.id === w.id || nx.wheel.branch))) {
+        const alt = nextInOrderAfter(origin.id);
+        nx = alt ? { kind:'wheel', id:alt.id, wheel:alt } : { kind:'none' };
+      }
+      if (origin.branch && nx.kind === 'none') continue;   // 原转盘自己也是分支 → 继续往外找
+      break;
+    }
+  }
+  if (nx.kind === 'end') {
+    f.pendingId = ''; f.finished = true;
+    saveRoundChart();                               // 记录一下本局结果（供导出/统计）
+    save(); renderFlowBar();
+    toast('流程结束：' + label, { action:'重新开始', fn:resetFlow });
+    showChartForEnd();                              // 按位置自动展示维度图
+    return;
+  }
+  if (nx.kind === 'wheel') {
+    /* 防死循环：最近 12 步里出现「长度 1~4 的循环重复 3 轮以上」→ 临时暂停自动跳转
+       （只暂停，不改开关；点「继续」/手动切换/重来即恢复） */
+    const loopLen = f.autoJump && !f.paused ? loopDetected() : 0;
+    if (loopLen) {
+      f.paused = true; f.pendingId = '';
+      save(); renderFlowBar();
+      const where = loopLen === 1 ? ('「' + w.name + '」') : (loopLen + ' 个转盘之间');
+      toast('流程在 ' + where + ' 反复循环，已临时暂停自动跳转', { action:'继续连转', fn:() => { state.flow.paused = false; renderFlowBar(); toast('已恢复自动跳转'); } });
+      return;
+    }
+    /* 顺序走到维度图那一位：先弹出来看一眼，自动收起后再继续往下一站 */
+    const midChart = (state.settings.chartOnEnd === false) ? null : chartAfter(w.id);
+    if (midChart && f.autoJump && !f.paused) {
+      if (nx.wheel.branch) f.retStack.push({ origin: w.id }); else f.retStack.length = 0;
+      f.pendingId = nx.id;
+      save(); renderFlowBar();
+      showChartThen(midChart, () => {
+        const f2 = state.flow;
+        if (!f2.autoJump || f2.paused || f2.finished) return;
+        f2.pendingId = '';
+        switchTo(nx.id, { silent:true, spin: f2.autoSpin });
+      });
+      return;
+    }
+    if (nx.wheel.branch) f.retStack.push({ origin: w.id });   // 拐进分支：记住回来的路
+    else f.retStack.length = 0;                               // 回到主线：偏离结束
+    f.pendingId = nx.id;
+    save(); renderFlowBar();
+    if (!f.autoJump || f.paused) return;           // 手动模式 / 已暂停：点顶部「→ 下一站」再走
+    jumpTimer = setTimeout(() => {
+      jumpTimer = null;
+      state.flow.pendingId = '';
+      switchTo(nx.id, { silent:true, spin: state.flow.autoSpin });
+    }, Math.max(400, num(f.delay) * 1000));
+    return;
+  }
+  if (!w.branch) f.retStack.length = 0;            // 主线停在原地，同样算偏离结束
+  f.pendingId = '';
+  save(); renderFlowBar();
+}
+/* 最近 12 步里是否出现长度 1~4 的循环（重复 3 轮以上）→ 返回循环长度，否则 0 */
+function loopDetected(){
+  const p = state.flow.path;
+  if (!p || p.length < 6) return 0;
+  const ids = p.slice(-12).map(x => x.wheelId);
+  for (let len = 1; len <= 4; len++) {
+    const need = len * 3;
+    if (ids.length < need) continue;
+    let same = true;
+    for (let i = ids.length - need + len; i < ids.length; i++) {
+      if (ids[i] !== ids[i - len]) { same = false; break; }
+    }
+    if (same) return len;
+  }
+  return 0;
+}
+let flowCollapseTimer = null;
+function scheduleFlowCollapse(){
+  clearTimeout(flowCollapseTimer);
+  flowCollapseTimer = null;
+  if (!state.flow.enabled || ui.flowCollapsed) return;
+  if (!state.flow.path.length && !state.flow.pendingId) return;
+  flowCollapseTimer = setTimeout(() => {
+    flowCollapseTimer = null;
+    if (state.flow.enabled && (state.flow.path.length || state.flow.pendingId)) {
+      ui.flowCollapsed = true;
+      renderFlowBar();
+    }
+  }, 7000);
+}
+function expandFlowBar(){
+  ui.flowCollapsed = false;
+  renderFlowBar();
+}
+function renderFlowBar(){
+  const bar = $('#flowBar');
+  if (!bar) return;
+  const f = state.flow || BASE_FLOW;
+  if (!f.enabled) { bar.hidden = true; bar.className = 'flow-bar'; bar.innerHTML = ''; return; }
+  const cur = currentWheel();
+  const pend = f.pendingId ? wheelById(f.pendingId) : null;
+  bar.hidden = false;
+  if (ui.flowCollapsed) {
+    bar.className = 'flow-bar collapsed';
+    bar.innerHTML = '<button class="flow-collapsed" data-act="expandFlow" aria-expanded="false" title="展开流程路径">' +
+        icon('branch') + esc(cur ? cur.name : '') + ' · 第 ' + (f.path.length + 1) + ' 步</button>' +
+      (pend ? '<button class="flow-next" data-act="goPending" title="立即前往下一站">→ ' + esc(pend.name) + '</button>' : '');
+    return;
+  }
+  bar.className = 'flow-bar';
+  let chips = '';
+  f.path.forEach((p, i) => {
+    chips += '<button class="flow-chip" data-act="gotoStep" data-idx="' + i + '" title="回到这一步重来"><b>' + esc(p.wheel) + '</b><i>' + esc(p.label) + '</i></button>' +
+             '<span class="flow-arrow" aria-hidden="true">›</span>';
+  });
+  chips += '<span class="flow-chip cur">' + esc(cur ? cur.name : '') + '</span>';
+  const paused = !!f.paused;
+  bar.innerHTML = '<button class="flow-reset" data-act="resetFlow" aria-label="回到起点重新开始" title="回到起点重新开始">' + icon('refresh') + '</button>' +
+    '<div class="flow-strip">' + chips + '</div>' +
+    (paused
+      ? '<button class="flow-next paused" data-act="resumeFlow" title="点一下恢复自动跳转">⏸ 已暂停 · 继续</button>'
+      : (pend ? '<button class="flow-next" data-act="goPending" title="立即前往下一站">→ ' + esc(pend.name) + '</button>' : ''));
+  const strip = bar.querySelector('.flow-strip');
+  if (strip) strip.scrollLeft = strip.scrollWidth;
+  scheduleFlowCollapse();
+}
+function viewTarget(){
+  const ctx = ui.targetCtx || { kind:'opt', wheel:'', opt:'', cur:'' };
+  const title = ctx.kind === 'root' ? '设置起点转盘' : (ctx.kind === 'def' ? '设置默认下一站' : '抽中后去哪个转盘');
+  const o = ctx.kind === 'opt' ? optById(ctx.wheel, ctx.opt) : null;
+  const sub = ctx.kind === 'opt'
+    ? '<div class="hint">当前选项：<b>' + esc((o && o.label) || '（空）') + '</b>（来自「' + esc((wheelById(ctx.wheel) || {}).name || '') + '」）</div>'
+    : '<div class="hint">' + (ctx.kind === 'root' ? '流程从这里开始。' : '该转盘里所有「跟随默认」的选项都会走到这里。') + '</div>';
+  return '<div class="sheet-head">' +
+      '<button class="icon-btn" data-act="backFlow">' + icon('back') + '</button>' +
+      '<h3 class="sheet-title">' + title + '</h3>' +
+      '<button class="icon-btn" data-act="close">' + icon('close') + '</button></div>' +
+    '<div class="sheet-body">' + sub +
+      '<div class="list">' + state.wheels.map(x =>
+        '<button class="pick-row' + (ctx.cur === x.id ? ' on' : '') + '" data-act="setTarget" data-val="' + x.id + '" data-id="' + x.id + '">' +
+        '<span>' + esc(x.name) + '</span><em>' + x.options.length + ' 项</em></button>').join('') + '</div>' +
+      (ctx.kind === 'root' ? '' :
+        '<div class="sec-title">其他</div><div class="tools">' +
+        '<button class="mini" data-act="setTarget" data-val="' + STAY + '">留在本盘</button>' +
+        '<button class="mini" data-act="setTarget" data-val="' + END + '">流程结束</button>' +
+        (ctx.cur ? '<button class="mini danger" data-act="setTarget" data-val="">清除设置</button>' : '') +
+        '</div>') +
+      '<div class="hint">选中即保存。同一个转盘可以被多个节点指向，也可以指向自己（形成循环，循环会被自动检测并提示）。</div>' +
+    '</div>';
+}
+
+/* ============================== 属性维度（等级 → 维度图） ==============================
+   像「E- / E / D / C / B / A / S / SS / SSS / EX」这种带等级的转盘，
+   抽完一轮后汇总成一张雷达图。分值 = 等级 × 10（E- = 17，EX = 100）。
+   ==================================================================================== */
+const GRADES = { F:1, E:2, D:3, C:4, B:5, A:6, S:7, SS:8, SSS:9, EX:10 };
+function parseGrade(label){
+  const m = String(label == null ? '' : label).match(/^\s*(EX|SSS|SS|S|A|B|C|D|E|F)\s*([+\-＋－]?)/i);
+  if (!m) return null;
+  let v = GRADES[m[1].toUpperCase()];
+  if (v == null) return null;
+  if (m[2] === '+' || m[2] === '＋') v += 0.3;
+  else if (m[2] === '-' || m[2] === '－') v -= 0.3;
+  return Math.max(0, Math.min(10, v));
+}
+/* 这个转盘算不算「属性盘」：手动指定优先，否则看选项里等级标签的比例
+   注意：按「全部选项」判断，不受临时停用（权重 0）影响 */
+function isGradeWheel(w){
+  if (!w) return false;
+  if (w.grade === true) return true;
+  if (w.grade === false) return false;
+  const opts = w.options || [];
+  if (!opts.length) return false;
+  const hit = opts.filter(o => parseGrade(o.label) != null).length;
+  return hit >= Math.ceil(opts.length * 0.6);
+}
+/* ===== 成长：转到「XX+N」就给对应属性升 N 级（EX 封顶） ===== */
+const GRADE_LADDER = ['E-', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS', 'EX'];
+/* 简称 → 转盘名（成长转盘里写的是「体术」「评级」这种简称） */
+const GROW_ALIAS = [
+  ['体术', '体术水平'], ['体质', '体质（基础体质）'], ['咒操', '咒力操纵'], ['操纵', '咒力操纵'],
+  ['效率', '咒力效率'], ['评级', '等级评定'], ['高级技巧', '高级技巧会几个'],
+  ['颜值', '穿越后的颜值'], ['道德', '道德水平'], ['咒力总量', '咒力总量'], ['天赋', '天赋']
+];
+function growTargetWheel(word){
+  const clean = String(word || '').replace(/[\s（(【\[].*$/, '').replace(/[的了之]$/, '').trim();
+  if (!clean) return null;
+  const ws = state.wheels || [];
+  let w = ws.filter(x => x.name === clean)[0];
+  if (!w) w = ws.filter(x => x.name.indexOf(clean) >= 0)[0];
+  if (!w) {
+    const a = GROW_ALIAS.filter(pr => clean.indexOf(pr[0]) >= 0 || pr[0].indexOf(clean) >= 0)[0];
+    if (a) w = ws.filter(x => x.name === a[1])[0] || ws.filter(x => x.name.indexOf(a[1].replace(/（.*$/, '')) >= 0)[0];
+  }
+  return w || null;
+}
+/* 解析一次抽屉结果的成长项：[{ wheel, steps }]；「虚度光阴（无属性成长）」返回空 */
+function parseGrowth(label){
+  const s = String(label || '');
+  if (/无属性成长|虚度光阴/.test(s)) return [];
+  const out = [], seen = {};
+  const push = (word, n) => {
+    const w = growTargetWheel(word);
+    if (!w || seen[w.id]) return;
+    seen[w.id] = 1;
+    out.push({ wheel: w, steps: Math.max(1, Math.min(5, n)) });
+  };
+  /* 括号里的补充说明也可能带成长：我掌握了咒力的核心！（咒操与效率+1） */
+  const mAll = s.match(/[（(]([^）)]*)[＋+]/);
+  const bodies = [mAll ? mAll[1] : null, s].filter(Boolean);
+  bodies.forEach(body => {
+    const re = /([^＋+\d（()）]{1,24}?)\s*[＋+]\s*(\d+)/g;
+    let m;
+    while ((m = re.exec(body))) {
+      const n = parseInt(m[2], 10) || 1;
+      m[1].split(/[与和、,，]/).forEach(nm => push(nm, n));   // 「咒操与效率+1」→ 两个目标共用 +1
+    }
+  });
+  return out;
+}
+/* 把标签沿「阶梯」上移 steps 级：等级型走 E-…EX，数字型（3个/不会）按该盘自己的选项排序，顶格即封顶 */
+function growLabel(wheel, label, steps){
+  if (!wheel || !steps) return label;
+  const base = String(label || '').replace(/[（(].*$/, '').trim();
+  const li = GRADE_LADDER.indexOf(base);
+  if (li >= 0) {
+    const next = GRADE_LADDER[Math.min(GRADE_LADDER.length - 1, li + steps)];
+    const full = (wheel.options || []).filter(o => String(o.label).replace(/[（(].*$/, '').trim() === next)[0];
+    return full ? full.label : next;      // 「C」→ 该盘里的「C（三级）」
+  }
+  const numOf = v => { const m = String(v).match(/(\d+)/); return m ? parseInt(m[1], 10) : (/不会|无|零/.test(v) ? 0 : null); };
+  const cur = numOf(base);
+  if (cur != null) {
+    const opts = wheel.options || [];
+    const nums = opts.map(o => numOf(o.label)).filter(v => v != null).sort((a, b) => a - b);
+    if (nums.length) {
+      const want = Math.min(nums[nums.length - 1], cur + steps);
+      const hit = opts.filter(o => numOf(o.label) === want)[0];
+      if (hit) return hit.label;
+    }
+  }
+  return label;
+}
+/* 叠加本轮已累计的成长 */
+function grownLabel(wheelId, label){
+  const g = (state.flow.grow || {})[wheelId];
+  if (!g || label == null) return label;
+  return growLabel(wheelById(wheelId), label, g);
+}
+/* 本轮某个属性最近一次抽到的原始标签 */
+function lastLabelOf(wheelId){
+  const path = state.flow.path || [];
+  for (let i = path.length - 1; i >= 0; i--) if (path[i].wheelId === wheelId) return path[i].label;
+  const his = state.history || [];
+  for (let i = 0; i < his.length; i++) if ((his[i].wheelId || his[i].wheel) === wheelId) return his[i].label;
+  return null;
+}
+/* 抽到成长选项时调用：累计 + 提示 */
+function applyGrowth(label){
+  const list = parseGrowth(label);
+  if (!list.length) return false;
+  if (!Array.isArray(state.flow.path)) state.flow.path = [];
+  if (!state.flow.grow || typeof state.flow.grow !== 'object') state.flow.grow = {};
+  const msgs = [];
+  list.forEach(({ wheel, steps }) => {
+    const raw = lastLabelOf(wheel.id);
+    const before = raw == null ? null : grownLabel(wheel.id, raw);
+    const beforeTxt = before || '—';
+    const grown = grownLabel(wheel.id, raw == null ? growLabel(wheel, GRADE_LADDER[0], 0) : raw);
+    const after = raw == null ? null : growLabel(wheel, before, steps);
+    const capped = before != null && after === before;
+    state.flow.grow[wheel.id] = Math.min(9, (state.flow.grow[wheel.id] || 0) + steps);
+    if (after != null) msgs.push(wheel.name + ' ' + beforeTxt + ' → ' + after + (capped ? '（已封顶）' : ''));
+    else msgs.push(wheel.name + ' +' + steps);
+  });
+  save();
+  toast('成长：' + msgs.join(' · '));
+  return true;
+}
+/* 某个转盘（含）之前一共有多少个属性盘 */
+function attrCountUpTo(wheelId){
+  const ws = state.wheels;
+  const limit = wheelId ? ws.findIndex(w => w.id === wheelId) : ws.length - 1;
+  if (limit < 0) return 0;
+  return ws.filter((w, i) => i <= limit && isGradeWheel(w)).length;
+}
+/* 统计「列表顺序在 anchorId 之前（含）」的所有属性盘：
+   抽到的用最后一次结果，没抽到的按 0 显示 */
+function dimsUpTo(anchorId){
+  const ws = state.wheels;
+  let limit = ws.length - 1;
+  if (anchorId) { const i = ws.findIndex(w => w.id === anchorId); limit = i < 0 ? ws.length - 1 : i; }
+  const pool = ws.filter((w, i) => i <= limit && isGradeWheel(w));
+  if (!pool.length) return [];
+  const last = {};
+  (state.flow.path || []).forEach(p => { if (parseGrade(p.label) != null) last[p.wheelId] = p.label; });
+  if (!Object.keys(last).length) {
+    const since = state.flow.roundAt || 0;
+    (state.history || []).slice(0, 60).forEach(h => {
+      const k = h.wheelId || h.wheel;
+      if (last[k] == null && (h.at || 0) >= since) last[k] = h.label;
+    });
+  }
+  return pool.map(w => {
+    const raw0 = last[w.id];
+    const raw = raw0 != null ? grownLabel(w.id, raw0) : null;   // 叠加本轮成长
+    const g = raw != null ? parseGrade(raw) : null;
+    return {
+      wheelId: w.id, wheel: w.name,
+      label: raw != null ? raw : '—',
+      value: g != null ? Math.round(g * 10) : 0
+    };
+  });
+}
+/* 汇总本局的属性维度（实时预览用：只统计抽到过的） */
+function chartDims(){
+  const pick = {}, order = [];
+  const add = (key, name, label) => {
+    const g = parseGrade(label);
+    if (g == null || !key) return;
+    const w = wheelById(key);
+    if (w && !isGradeWheel(w)) return;
+    if (!pick[key]) order.push(key);
+    pick[key] = { wheelId:key, wheel:name, label:label, grade:g, value:Math.round(g * 10) };
+  };
+  (state.flow.path || []).forEach(p => add(p.wheelId, p.wheel, p.label));
+  if (!order.length) {
+    const since = state.flow.roundAt || 0;
+    (state.history || []).slice(0, 40).forEach(h => { if ((h.at || 0) >= since) add(h.wheelId || h.wheel, h.wheel, h.label); });
+  }
+  return order.map(k => pick[k]);
+}
+function chartSummary(dims){
+  return '【咒术转盘·本局属性】\n' + dims.map(d => d.wheel + '：' + d.label + '（' + d.value + '）').join('\n');
+}
+/* 把当前这一局的属性定格下来（流程结束时调用） */
+function saveRoundChart(){
+  const dims = chartDims();
+  if (dims.length < 1) return null;
+  state.lastChart = { at: Date.now(), dims:dims };
+  saveSoon();
+  return state.lastChart;
+}
+/* 新建一张「属性维度图」：统计列表顺序在 afterId 之前（含）的属性盘，
+   没抽到的按 0 算；生成后不再随转盘变化 */
+function createChartSnapshot(name, afterId){
+  const dims = dimsUpTo(afterId || '');
+  /* 只在整个牌组都没有属性盘时才拒绝；放在靠前位置（那一刻还没属性盘）也要允许建，
+     这类图的数据在展示时会按「本轮到目前为止」实时统计 */
+  if (!dims.length && !(state.wheels || []).some(isGradeWheel)) {
+    return { ok:false, msg:'牌组里没有属性转盘（带 E/D/C/B/A/S/SS/SSS/EX 等级的转盘）' };
+  }
+  const prev = state.charts[state.charts.length - 1] || null;
+  const item = {
+    id: uid(),
+    name: (name && String(name).trim()) || ('属性维度图 ' + (state.charts.length + 1)),
+    at: Date.now(),
+    after: afterId || '',
+    dims: dims.map(d => ({ wheel:d.wheel, label:d.label, value:d.value }))
+  };
+  state.charts.push(item);
+  save();
+  return { ok:true, item:item, prev:prev };
+}
+/* 上一张图（用于「从旧图形变到新图」的动画） */
+function prevChartOf(item){
+  const i = state.charts.indexOf(item);
+  return i > 0 ? state.charts[i - 1] : null;
+}
+
+/* ============================== 属性雷达图 ============================== */
+/* 维度图配色（可在「设置」页切换） */
+const CHART_INKS = [
+  ['zhu',  '朱砂', '#B23A2F'],
+  ['mo',   '墨黑', '#2A241C'],
+  ['qing', '靛青', '#2F5D7C'],
+  ['jin',  '赭金', '#A9751F'],
+  ['tai',  '苔绿', '#3E6B4A'],
+  ['zi',   '紫苑', '#6B4A7C']
+];
+function chartInkKey(){
+  const k = state.settings.chartColor || 'zhu';
+  return CHART_INKS.some(x => x[0] === k) ? k : 'zhu';
+}
+function chartInk(){ return CHART_INKS.filter(x => x[0] === chartInkKey())[0][2]; }
+/* 法轮颜色（与维度图颜色分开设置，默认赭金 = 黄铜） */
+/* 法轮色板：在维度图六色之外多一个「素白」（深色主题下很亮，浅色主题下是淡淡一层） */
+const WHEEL_INKS = CHART_INKS.concat([['bai', '素白', '#FFFFFF']]);
+function wheelInkKey(){
+  const k = state.settings.wheelColor || 'jin';
+  return WHEEL_INKS.some(x => x[0] === k) ? k : 'jin';
+}
+function wheelInk(){ return WHEEL_INKS.filter(x => x[0] === wheelInkKey())[0][2]; }
+/* 明暗调整：amt>0 变亮、<0 变暗 */
+function shadeHex(hex, amt){
+  const h = String(hex || '#888888').replace('#', '');
+  const full = h.length === 3 ? h.replace(/./g, c => c + c) : h;
+  const n = parseInt(full, 16) || 0;
+  const f = v => Math.max(0, Math.min(255, Math.round(v + 255 * amt)));
+  return 'rgb(' + f((n >> 16) & 255) + ',' + f((n >> 8) & 255) + ',' + f(n & 255) + ')';
+}
+/* 一颗小球（无高光：整体同色，只在边缘轻微压暗，保留一点体积感） */
+function brassBall(ctx, x, y, r, col){
+  const g = ctx.createRadialGradient(x, y, r * 0.1, x, y, r);
+  g.addColorStop(0, col);
+  g.addColorStop(0.82, col);
+  g.addColorStop(1, shadeHex(col, -0.14));
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU);
+  ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = shadeHex(col, 0.02);
+  ctx.lineWidth = Math.max(0.5, r * 0.06);
+  ctx.stroke();
+}
+/* 法轮：八根辐条 + 外环（正好压在 SSS 值上）+ 外圈八颗小球（圆心在 EX 值上）+ 中心球 */
+const DHARMA_SPOKES = 8;
+/* 离屏缓存：法轮先在离屏画布上用 100% 不透明画好，再整体按一次 alpha 贴上来。
+   这样辐条、环、小球之间的重叠处不会"叠出"更深的颜色，透明度处处一致 */
+let dharmaCache = null;
+function dharmaWheelCanvas(R, col){
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const half = R * 1.2 + R * 0.14 + 4;
+  const size = Math.max(8, Math.round(half * 2 * dpr));
+  const key = [R.toFixed(1), col, dpr].join('|');
+  if (dharmaCache && dharmaCache.key === key) return dharmaCache;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = size;
+  const c2 = cv.getContext('2d');
+  c2.setTransform(dpr, 0, 0, dpr, 0, 0);
+  c2.translate(half, half);
+  drawDharmaWheel(c2, R, 0, col, 1);
+  dharmaCache = { key:key, cv:cv, half:half };
+  return dharmaCache;
+}
+function drawDharmaWheel(ctx, R, deg, col, alpha){
+  const A = (alpha == null) ? 0.40 : alpha;   // 半透明
+  const ringW = R * 0.040;   // 外环再细一档
+  const ballR = R * 0.122;   // 比原来小一点点
+  const hubBall = R * 0.148;
+  const outerR = R * 1.2;                    // 小球圆心 = EX 值（外环的 1.2 倍）
+  const spokeOut = R * 0.060;                // 辐条探出外环的长度（只跟 R 挂钩，调环粗细不会牵连它）
+  ctx.save();
+  ctx.globalAlpha = A;                        // ← 关键：真正把透明度应用上去
+  ctx.rotate(deg * Math.PI / 180);
+  // 辐条
+  ctx.strokeStyle = shadeHex(col, -0.06);   // 与环比色接近，避免"透明度不一致"的错觉
+  ctx.lineWidth = Math.max(2, R * 0.032);
+  ctx.lineCap = 'round';
+  for (let i = 0; i < DHARMA_SPOKES; i++) {
+    const a = -Math.PI / 2 + i * TAU / DHARMA_SPOKES;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * hubBall * 0.95, Math.sin(a) * hubBall * 0.95);   // 从中心球表面出发
+    ctx.lineTo(Math.cos(a) * (R + spokeOut), Math.sin(a) * (R + spokeOut));   // 两端同半径，辐条才不歪   // 只探出外环一点点（探出长度 = R × 0.054，只跟 R 挂钩）
+    ctx.stroke();
+  }
+  // 外环（SSS 值压在这条环上）
+  const g = ctx.createLinearGradient(-R, -R, R, R);
+  g.addColorStop(0, shadeHex(col, 0.18));
+  g.addColorStop(0.45, col);
+  g.addColorStop(1, shadeHex(col, -0.24));
+  ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU);
+  ctx.strokeStyle = g; ctx.lineWidth = ringW; ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 0, R + ringW * 0.52, 0, TAU);
+  ctx.strokeStyle = shadeHex(col, -0.16); ctx.lineWidth = Math.max(0.6, R * 0.006); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 0, R - ringW * 0.52, 0, TAU);
+  ctx.strokeStyle = shadeHex(col, -0.14); ctx.lineWidth = Math.max(0.6, R * 0.006); ctx.stroke();
+  // 外圈八颗小球
+  for (let i = 0; i < DHARMA_SPOKES; i++) {
+    const a = -Math.PI / 2 + i * TAU / DHARMA_SPOKES;
+    brassBall(ctx, Math.cos(a) * outerR, Math.sin(a) * outerR, ballR, col);
+  }
+  // 中心球
+  brassBall(ctx, 0, 0, hubBall, col);
+  ctx.restore();
+}
+/* 法轮运动，与音效对齐：
+   音效 0~2.0s（占 66.5%）是忽高忽低的“咔哒蓄力” → 法轮原地抖动、不产生净旋转；
+   2.0~3.0s 转为持续平稳段 → 法轮平滑地逆时针转满 45°。
+   分割点由音频包络分析得到（0.665 = 2.0 / 3.0）。 */
+const GEAR_TURN_AT = 0.665;
+function gearMotion(t){
+  if (t <= GEAR_TURN_AT) {                       // 蓄力抖动
+    const k = t / GEAR_TURN_AT;
+    const deg = Math.sin(k * Math.PI * 26) * 1.2 * (0.3 + 0.7 * k);   // 抖动幅度已减半
+    const dy = Math.sin(k * Math.PI * 34) * 0.8 * (0.3 + 0.7 * k);
+    const sc = 1 + Math.sin(k * Math.PI * 26) * 0.003;
+    return { deg:deg, dy:dy, sc:sc };
+  }
+  const k = (t - GEAR_TURN_AT) / (1 - GEAR_TURN_AT);   // 真正转动
+  const e = 1 - Math.pow(1 - k, 2.6);
+  const ripple = Math.sin(k * Math.PI * 6) * 0.7 * (1 - k);   // 极轻的齿轮余韵
+  return { deg: -45 * e + ripple, dy: -2 * Math.sin(k * Math.PI) , sc: 1 + 0.012 * Math.sin(k * Math.PI) };
+}
+function gearAngle(t){ return gearMotion(t).deg; }
+function chartColors(){
+  const css = getComputedStyle(document.documentElement);
+  const g = n => css.getPropertyValue(n).trim();
+  return {
+    ink: g('--ink') || '#2A241C', accent: chartInk(),
+    line: g('--line') || 'rgba(70,56,34,.18)', muted: g('--muted') || '#8B7C65',
+    paper: g('--paper') || '#FBF6E9'
+  };
+}
+/* 刻度：外圈 = SSS（90 分）；EX（100）溢出到格外一格（1.2R） */
+const CHART_MAX = 90, CHART_OVER = 50;
+const GRADE_BASE = 17;                 // E- = 17 分 → 维度图 0 位置
+function chartRadiusRatio(v){
+  const x = Math.max(0, num(v));
+  if (x <= GRADE_BASE) return 0;                                       // E- 及以下都贴中心
+  if (x <= CHART_MAX) return (x - GRADE_BASE) / (CHART_MAX - GRADE_BASE);
+  return 1 + (x - CHART_MAX) / CHART_OVER;
+}
+function drawRadar(cv, dims, prog, fromVals, wheelDeg, wheelDy, wheelSc){
+  if (!cv || !dims || !dims.length) return;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const W = Math.round(w * dpr), H = Math.round(h * dpr);
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const c = chartColors();
+  const n = dims.length;
+  const cx = w / 2, cy = h / 2;
+  const R = (Math.min(w, h) / 2 - 74) / 1.2;          // 给 EX 小球 / 标签留位置
+  ctx.save();
+  ctx.translate(cx, cy);                                // 法轮画在圆心
+  if (wheelDy) ctx.translate(0, wheelDy);               // 蓄力段的上下抖动
+  if (wheelSc && wheelSc !== 1) ctx.scale(wheelSc, wheelSc);
+  ctx.rotate((wheelDeg || 0) * Math.PI / 180);          // 旋转在贴图这一步做
+  const dc = dharmaWheelCanvas(R, wheelInk());
+  ctx.globalAlpha = clamp(num(state.settings.wheelAlpha) || 0.40, 0.05, 1);   // 透明度可在设置里调
+  ctx.drawImage(dc.cv, -dc.half, -dc.half, dc.half * 2, dc.half * 2);
+  ctx.globalAlpha = 1;
+  ctx.restore();
+  /* 每个轴各自从「上一张图的值」长到「这一张的值」；没有上一张就从 0 长出来 */
+  const cur = dims.map((d, i) => {
+    const from = fromVals ? num(fromVals[i]) : 0;
+    return from + (num(d.value) - from) * prog;
+  });
+  const vals = cur.map(v => Math.min(chartRadiusRatio(v), 1.2));
+
+  if (n < 3 || R < 24) {            // 少于 3 个维度画不了雷达 → 用条形
+    const rowH = Math.min(46, (h - 10) / Math.max(1, n));
+    dims.forEach((d, i) => {
+      const y = 8 + i * rowH;
+      ctx.font = '600 12.5px ' + FONT; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      ctx.fillStyle = c.ink; ctx.fillText(String(d.wheel).slice(0, 8), 4, y + 8);
+      ctx.textAlign = 'right'; ctx.fillStyle = c.accent;
+      ctx.font = '700 14px ' + WFONT;
+      ctx.fillText(d.label.split('（')[0], w - 4, y + 8);
+      const bx = 4, bw = w - 8, by = y + 20;
+      ctx.fillStyle = c.line; ctx.fillRect(bx, by, bw, 8);
+      ctx.fillStyle = c.accent; ctx.fillRect(bx, by, bw * (vals[i] / 1.2), 8);   // vals 已按新刻度算过
+    });
+    return;
+  }
+  const pt = (i, r) => {
+    const a = -Math.PI / 2 + i * TAU / n;
+    return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+  };
+  const poly = r => {
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) { const p = pt(i, typeof r === 'function' ? r(i) : r); i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); }
+    ctx.closePath();
+  };
+  // 网格：每一圈正好落在某个等级上（E=20 … SSS=90），方便对照等级
+  const RING_GRADES = [['E',20],['D',30],['C',40],['B',50],['A',60],['S',70],['SS',80],['SSS',90]];
+  RING_GRADES.forEach(([name, v], k) => {
+    const isTop = v === CHART_MAX;
+    poly(R * chartRadiusRatio(v));
+    ctx.strokeStyle = isTop ? c.ink : c.line;
+    ctx.globalAlpha = isTop ? 0.5 : 1;
+    ctx.setLineDash(isTop ? [] : [3, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+  });
+  // 等级刻度：写在正上方那根轴上（左侧），对齐它所在的圈
+  {
+    const fs = Math.max(8, R * 0.085);
+    ctx.font = '600 ' + fs.toFixed(1) + 'px ' + FONT;
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = c.muted;
+    RING_GRADES.forEach(([name, v]) => {
+      ctx.globalAlpha = (v === CHART_MAX) ? 0.9 : 0.72;
+      ctx.fillText(name, -R * 0.045, -R * chartRadiusRatio(v));
+    });
+    ctx.globalAlpha = 0.55;                       // 中心 = E-
+    ctx.fillText('E-', -R * 0.045, -R * 0.2);
+    ctx.globalAlpha = 1;
+  }
+  for (let k = 1; k <= 0; k++) {
+    poly(R * k / 1);
+    ctx.strokeStyle = k === rings ? c.ink : c.line;
+    ctx.globalAlpha = k === rings ? 0.5 : 1;
+    ctx.setLineDash(k === rings ? [] : [3, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+  }
+  // EX 线（格外一格）
+  poly(1.2 * R);
+  ctx.strokeStyle = c.accent; ctx.globalAlpha = 0.45;   // EX 大圆环：恢复到看得清
+  ctx.lineWidth = Math.max(0.8, R * 0.008);
+  ctx.setLineDash([2, 5]); ctx.stroke();
+  ctx.setLineDash([]); ctx.globalAlpha = 1;
+  // 轴线
+  ctx.strokeStyle = c.line; ctx.setLineDash([3, 4]);
+  for (let i = 0; i < n; i++) { const p = pt(i, R); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(p[0], p[1]); ctx.stroke(); }
+  ctx.setLineDash([]);
+  // 数值多边形
+  poly(i => R * vals[i]);
+  ctx.fillStyle = c.accent; ctx.globalAlpha = 0.22; ctx.fill(); ctx.globalAlpha = 1;
+  ctx.strokeStyle = c.accent; ctx.lineWidth = 2.2; ctx.lineJoin = 'round'; ctx.stroke();
+  // 顶点
+  for (let i = 0; i < n; i++) {
+    const p = pt(i, R * vals[i]);
+    ctx.beginPath(); ctx.arc(p[0], p[1], 4, 0, TAU); ctx.fillStyle = c.accent; ctx.fill();
+    ctx.beginPath(); ctx.arc(p[0], p[1], 1.6, 0, TAU); ctx.fillStyle = c.paper; ctx.fill();
+  }
+  // 标签：转盘名 + 等级（不显示数字）；统一放在 EX 外圈之外，避免和溢出的顶点重叠
+  const LR = R * 1.2 + R * 0.122 + 16;   // 让开外圈小球
+  for (let i = 0; i < n; i++) {
+    const a = -Math.PI / 2 + i * TAU / n;
+    const lx = cx + Math.cos(a) * LR, ly = cy + Math.sin(a) * LR;
+    const cos = Math.cos(a);
+    ctx.textAlign = Math.abs(cos) < 0.25 ? 'center' : (cos > 0 ? 'left' : 'right');
+    ctx.textBaseline = 'middle';
+    const avail = Math.abs(cos) < 0.25 ? (w / 2 - 8) : (cos > 0 ? (w - lx - 6) : (lx - 6));
+    const nameTxt = String(dims[i].wheel).slice(0, 7);
+    const valTxt = dims[i].label.split('（')[0];        // 只留等级，如 EX / SSS
+    let fs1 = 11;
+    ctx.font = '600 ' + fs1 + 'px ' + FONT;
+    while (fs1 > 8 && ctx.measureText(nameTxt).width > avail) { fs1 -= 0.5; ctx.font = '600 ' + fs1 + 'px ' + FONT; }
+    ctx.fillStyle = c.muted;
+    ctx.fillText(nameTxt, lx, ly - 9);
+    let fs2 = 14;
+    ctx.font = '700 ' + fs2 + 'px ' + WFONT;
+    while (fs2 > 9 && ctx.measureText(valTxt).width > avail) { fs2 -= 0.5; ctx.font = '700 ' + fs2 + 'px ' + WFONT; }
+    ctx.fillStyle = c.accent;
+    ctx.fillText(valTxt, lx, ly + 8);
+  }
+}
+let chartRaf = 0;
+function startChartAnim(cv, dims, fromDims){
+  cancelAnimationFrame(chartRaf);
+  const fromMap = {};
+  (fromDims || []).forEach(d => { fromMap[d.wheel] = num(d.value); });
+  const fromVals = dims.map(d => (fromMap[d.wheel] != null ? fromMap[d.wheel] : 0));
+  const hasPrev = (fromDims || []).length > 0;
+  const t0 = performance.now(), dur = 3000;         // 和音效等长（3 秒）
+  const growth = GEAR_TURN_AT;                      // 数据图形在蓄力段就长好
+  loadGearSfx();
+  let played = playGearSfx();
+  let triedSynth = false;
+  (function frame(now){
+    const t = clamp((now - t0) / dur, 0, 1);       // 钳到 0~1，避免时钟差异算出负进度
+    if (!played) {                                  // 真音效还没解码好：等着补播，绝不误用合成音
+      loadGearSfx();
+      played = playGearSfx();
+      if (!played && !GEAR_SFX && !triedSynth) { triedSynth = true; gearTick(); }
+    }
+    const gm = gearMotion(t);
+    drawRadar(cv, dims, clamp(t / growth, 0, 1), fromVals, gm.deg, gm.dy, gm.sc);   // 法轮：前段抖动、后段转 45°
+    if (t < 1) chartRaf = requestAnimationFrame(frame);
+  })(t0);
+}
+function viewNewPick(){
+  return '<div class="sheet-head">' +
+      '<button class="icon-btn" data-act="back" aria-label="返回">' + icon('back') + '</button>' +
+      '<h3 class="sheet-title">新建</h3>' +
+      '<button class="icon-btn" data-act="close" aria-label="关闭">' + icon('close') + '</button></div>' +
+    '<div class="sheet-body"><div class="action-list">' +
+      '<button class="action-row" data-act="addWheel"><span class="ai">' + icon('plus') + '</span>新建转盘<em>抽选项用</em></button>' +
+      '<button class="action-row" data-act="newChartItem"><span class="ai">' + icon('branch') + '</span>新建属性维度图<em>随时可建</em></button>' +
+    '</div>' +
+    '<div class="hint"><b>属性维度图</b>会把所选范围里的属性固化成一张雷达图（没抽到的按 <b>0</b> 算），' +
+      '生成后<b>不再随转盘变化</b>；之后再建一张时，新图会<b>从上一张的形状变形过来</b>。<br>' +
+      '建好之后在「记录」页可以看到全部维度图。</div></div>';
+}
+function viewNewChart(){
+  const n = ui.newChartAnchor || '';
+  const head = '<div class="sheet-head">' +
+      '<button class="icon-btn" data-act="back" aria-label="返回">' + icon('back') + '</button>' +
+      '<h3 class="sheet-title">新建属性维度图</h3>' +
+      '<button class="icon-btn" data-act="close" aria-label="关闭">' + icon('close') + '</button></div>';
+  const cnt = attrCountUpTo(n);
+  return head + '<div class="sheet-body">' +
+    '<label class="row-switch"><span>名字</span>' +
+      '<input id="newChartName" type="text" maxlength="20" style="width:56%;text-align:right" ' +
+      'value="' + esc(ui.newChartName || ('属性维度图 ' + (state.charts.length + 1))) + '"></label>' +
+    '<div class="sec-title">统计范围 · 这里之前的属性转盘都会算进来</div>' +
+    '<div class="list">' +
+      '<button class="pick-row' + (n === '__top__' ? ' on' : '') + '" data-act="setAnchor" data-val="__top__">' +
+        '<span>列表最前（不统计任何转盘）</span><em>0 项</em></button>' +
+      '<button class="pick-row' + (n === '' ? ' on' : '') + '" data-act="setAnchor" data-val="">' +
+        '<span>全部转盘（放在列表最后）</span><em>' + attrCountUpTo('') + ' 项</em></button>' +
+      state.wheels.map((w, i) =>
+        '<button class="pick-row' + (n === w.id ? ' on' : '') + '" data-act="setAnchor" data-val="' + w.id + '" data-id="' + w.id + '">' +
+        '<span>到「' + esc(w.name) + '」为止</span><em>' + attrCountUpTo(w.id) + ' 项</em></button>').join('') +
+    '</div>' +
+    '<button class="btn block" data-act="doCreateChart">生成维度图（' + cnt + ' 项属性）</button>' +
+    '<div class="hint">没抽到的属性按 <b>0</b> 算，所以<b>随时都能建</b>，不必等转盘抽完。<br>' +
+      '生成后这张图会<b>定格</b>、不再随转盘变化；它会在「转盘」页里排在所选的转盘后面，' +
+      '之后再新建一张时，新图会从上一张的形状<b>变形过来</b>。</div>' +
+  '</div>';
+}
+/* 只展示图：标题 + 雷达图（管理/删除都在「记录」页的列表里） */
+function chartLiveDims(item){
+  const full = chartDims();                       // 本轮到目前为止抽过的全部属性
+  if (!item) return dimsUpTo('');
+  const a = (item.after == null) ? '' : item.after;
+  /* ① 放在「列表最前 / 所有转盘之后」→ 这两处本来就是"整轮"的位置，直接统计本轮全部 */
+  if (a === '__top__' || !a) return full.length ? full : (item.dims || []);
+  /* ② 指定了某个转盘之后 → 只统计它之前的属性盘（没抽到的显示 0，这是刻意的：
+        位置靠前的图本来就该是"那一刻的快照"，只有 0 才是真实情况） */
+  const scoped = dimsUpTo(a);
+  if (scoped.length) return scoped;
+  /* ③ 那个范围里一个属性盘都没有（比如放在成长盘后面，属性盘还在更后面）→
+        退回本轮全部，否则这张图永远是空的 */
+  return full.length ? full : (item.dims || []);
+}
+function viewChart(){
+  const item = ui.chartItem || null;
+  const dims = chartLiveDims(item);
+  ui.chartDims = dims;
+  const prev = item ? prevChartOf(item) : null;
+  ui.chartFrom = prev ? chartLiveDims(prev) : null;   // 从上一张的实时数据变形过来
+  const head = '<div class="sheet-head">' +
+      '<span class="icon-btn" aria-hidden="true"></span>' +
+      '<h3 class="sheet-title">' + esc(item ? item.name : '属性维度图') + '</h3>' +
+      '<button class="icon-btn" data-act="close" aria-label="关闭">' + icon('close') + '</button></div>';
+  if (!dims.length) {
+    return head + '<div class="sheet-body"><div class="empty">这张图没有可统计的属性</div></div>';
+  }
+  return head + '<div class="sheet-body"><div class="chart-wrap"><canvas id="chartCv"></canvas></div></div>';
+}
+
+/* ============================== toast / 对话框 ============================== */
+let toastTimer = null;
+function toast(msg, opts){
+  const el = $('#toast');
+  el.innerHTML = '<span>' + esc(msg) + '</span>';
+  if (opts && opts.action) {
+    const b = document.createElement('button');
+    b.className = 'toast-act';
+    b.textContent = opts.action;
+    b.onclick = () => { hideToast(); try { opts.fn && opts.fn(); } catch(e){} };
+    el.appendChild(b);
+  }
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, (opts && opts.action) ? 3400 : 1800);
+}
+function hideToast(){ $('#toast').classList.remove('show'); }
+
+function askDialog(o){
+  o = o || {};
+  return new Promise(resolve => {
+    const ov = $('#confirmOverlay');
+    $('#cTitle').textContent = o.title || '提示';
+    const d = $('#cDesc'); d.textContent = o.desc || ''; d.hidden = !o.desc;
+    const inp = $('#cInput');
+    const isInput = o.value !== undefined && o.value !== null;
+    inp.hidden = !isInput;
+    if (isInput) inp.value = o.value;
+    const ok = $('#cOk');
+    ok.textContent = o.ok || '确定';
+    ok.classList.toggle('danger', !!o.danger);
+    ov.classList.add('open');
+    if (isInput) setTimeout(() => { try { inp.focus(); inp.select(); } catch(e){} }, 60);
+    const finish = v => {
+      ov.classList.remove('open');
+      ok.onclick = null; $('#cCancel').onclick = null; inp.onkeydown = null; ov.onclick = null;
+      resolve(v);
+    };
+    ok.onclick = () => finish(isInput ? inp.value : true);
+    $('#cCancel').onclick = () => finish(isInput ? null : false);
+    inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); ok.click(); } };
+    ov.onclick = e => { if (e.target === ov) finish(isInput ? null : false); };
+  });
+}
+async function copyText(text){
+  try { await navigator.clipboard.writeText(text); toast('已复制'); return; } catch(e){}
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    document.execCommand('copy'); ta.remove(); toast('已复制');
+  } catch(e){ toast('复制失败，请长按手动选择'); }
+}
+
+/* ============================== 面板视图 ============================== */
+function switchRow(key, label, val, scope){
+  const attr = 'data-' + (scope ? scope + '-' : '') + 'toggle';
+  return '<label class="row-switch"><span>' + label + '</span>' +
+    '<input type="checkbox" ' + attr + '="' + key + '"' + (val ? ' checked' : '') + '><i></i></label>';
+}
+function viewSwitch(){ return ''; }   /* 「选择转盘」已合并进「转盘」页，保留以兼容旧调用 */
+function viewPanel(){ return ''; }   /* 已合并进统一管理面板，保留以兼容旧调用 */
+function tabHistory(){
+  const charts = state.charts.slice().reverse();
+  return '<div class="sec-title">属性维度图</div>' +
+    '<div class="tools"><button class="mini" data-act="newChartItem">' + icon('plus') + ' 新建属性维度图</button></div>' +
+    (charts.length
+      ? '<div class="list">' + charts.map(c =>
+          '<div class="row" data-id="' + c.id + '">' +
+            '<div class="wheel-top">' +
+              '<button class="wheel-open" data-act="openChartItem" data-id="' + c.id + '">' +
+                '<span class="wdot" style="background:' + chartInk() + '"></span>' +
+                '<span class="wname">' + esc(c.name) + '</span>' +
+              '</button>' +
+              '<span class="wmeta">' + c.dims.length + ' 项 · ' + fmtTime(c.at) + '</span>' +
+            '</div>' +
+            '<div class="row-acts">' +
+              '<button class="mini" data-act="openChartItem" data-id="' + c.id + '">查看</button>' +
+              '<button class="mini danger" data-act="delChart" data-id="' + c.id + '">' + icon('trash') + '</button>' +
+            '</div>' +
+          '</div>').join('') + '</div>'
+      : '<div class="empty">还没有维度图<br>点上面「新建属性维度图」—— <b>随时都能建</b>，没抽到的属性按 0 算</div>') +
+    '<div class="sec-title">抽奖记录</div>' +
+    (state.history.length
+      ? '<div class="tools">' +
+          '<button class="mini" data-act="copyHistory">' + icon('copy') + ' 复制全部</button>' +
+          '<button class="mini danger" data-act="clearHistory">' + icon('trash') + ' 清空记录</button></div>' +
+        '<div class="list">' + state.history.map(h =>
+          '<div class="row his-row"><div class="row-main"><div class="his-label">' + esc(h.label) + '</div>' +
+          '<div class="sub">' + esc(h.wheel || '') + ' · ' + fmtTime(h.at) + '</div></div></div>').join('') + '</div>'
+      : '<div class="empty">还没有抽奖记录</div>');
+}
+function flowModeText(){
+  const f = state.flow;
+  if (!f.enabled) return { t:'分支流程已关闭 —— 不记录路径，抽完也不会跳转', off:true };
+  if (f.paused) return { t:'自动跳转已临时暂停（检测到循环）—— 点「继续连转」恢复', off:false };
+  if (!f.autoJump) return { t:'当前：手动模式 —— 抽完只提示下一站，点顶部「→ 下一站」再走', off:false };
+  if (f.autoSpin) return { t:'当前：一路自动连转 —— 跳过去之后会立刻自动旋转', off:false };
+  return { t:'当前：只跳不转 —— 跳过去后停下，等你点「点击旋转」', off:false };
+}
+function tabSettings(){
+  const s = state.settings, f = state.flow;
+  const mode = flowModeText();
+  const rootW = (f.rootId && wheelById(f.rootId)) ? wheelById(f.rootId) : null;
+  return '<div class="sec-title">流程</div>' +
+    '<label class="row-switch"><span>使用分支流程</span>' +
+      '<input type="checkbox" data-flow-toggle="enabled"' + (f.enabled ? ' checked' : '') + '><i></i></label>' +
+    switchRow('autoJump', '抽中后自动跳转下一站', f.autoJump, 'flow') +
+    switchRow('autoSpin', '跳转后自动旋转下一个转盘', f.autoSpin, 'flow') +
+    switchRow('chartOnEnd', '流程结束时展示属性维度图', state.settings.chartOnEnd !== false) +
+    '<label class="row-switch"><span>跳转前停留 <em id="delayVal">' + f.delay + ' 秒</em></span>' +
+      '<input type="range" min="0.4" max="5" step="0.2" value="' + f.delay + '" data-field="flowDelay"></label>' +
+    '<div class="mode-line' + (mode.off ? ' off' : '') + '">' + mode.t + '</div>' +
+    (f.paused ? '<div class="tools"><button class="mini" data-act="resumeFlow">继续连转</button></div>' : '') +
+    '<div class="tools">' +
+      '<button class="mini" data-act="pickRoot">' + icon('branch') + ' 起点：' + esc(rootW ? rootW.name : '第一个转盘') + '</button>' +
+      '<button class="mini danger" data-act="clearLinks">清除所有连接</button>' +
+    '</div>' +
+    '<div class="hint">优先级：<b>选项自己的跳转目标</b> 高于 <b>转盘的默认下一站</b>；都没设就跟着「转盘」页的列表顺序走（分支转盘跳过），排到最后一个就收尾。' +
+      '这两处目标都在各个转盘的「选项内容」页里设置。</div>' +
+    '<div class="sec-title">调色板</div><div class="seg">' +
+    Object.keys(PALETTES).map(k =>
+      '<button class="seg-btn' + (s.palette === k ? ' on' : '') + '" data-act="setPalette" data-val="' + k + '">' + PALETTES[k].name + '</button>').join('') +
+    '</div>' +
+    '<div class="sec-title">外观</div><div class="seg">' +
+    '<button class="seg-btn' + (s.theme !== 'dark' ? ' on' : '') + '" data-act="setTheme" data-val="light">浅色</button>' +
+    '<button class="seg-btn' + (s.theme === 'dark' ? ' on' : '') + '" data-act="setTheme" data-val="dark">深色</button>' +
+    '</div>' +
+    '<div class="sec-title">维度图颜色</div>' +
+    '<div class="tools">' + CHART_INKS.map(x =>
+      '<button class="mini' + (chartInkKey() === x[0] ? ' on' : '') + '" data-act="setChartColor" data-val="' + x[0] + '">' +
+      '<span class="cdot" style="background:' + x[2] + '"></span>' + x[1] + '</button>').join('') + '</div>' +
+    '<div class="hint">决定属性维度图的<b>描边、填充和等级文字</b>颜色（雷达图会立刻按新颜色重画）。</div>' +
+    '<div class="sec-title">法轮颜色</div>' +
+    '<div class="tools">' + WHEEL_INKS.map(x =>
+      '<button class="mini' + (wheelInkKey() === x[0] ? ' on' : '') + '" data-act="setWheelColor" data-val="' + x[0] + '">' +
+      '<span class="cdot" style="background:' + x[2] + '"></span>' + x[1] + '</button>').join('') + '</div>' +
+    '<label class="row-switch"><span>法轮透明度 <em id="wAlphaVal">' + Math.round((num(s.wheelAlpha) || 0.40) * 100) + '%</em></span>' +
+      '<input type="range" min="0.05" max="1" step="0.05" value="' + (num(s.wheelAlpha) || 0.40) + '" data-field="wheelAlpha"></label>' +
+    '<div class="hint">法轮是维度图的背景：八根辐条对应八个方向、外环压在 <b>SSS</b> 值上、' +
+      '外圈八颗小球的圆心正好在 <b>EX</b> 值上。每次打开维度图会<b>逆时针咔哒转 45°</b>（带齿轮音）。' +
+      '此项与维度图颜色分开设置。</div>' +
+    '<div class="hint" style="opacity:.6;font-size:11px">构建 v09-11-03:54 法轮0.18·抖动1.2（如果这里不是最新的，按 Ctrl+F5 强制刷新）</div>' +
+    '<div class="sec-title">旋转的物理效果</div>' +
+    '<div class="tools">' + SPIN_FX.map(x =>
+      '<button class="mini' + (spinFxKey() === x[0] ? ' on' : '') + '" data-act="setSpinFx" data-val="' + x[0] + '" title="' + x[2] + '">' +
+      x[1] + '</button>').join('') + '</div>' +
+    '<div class="hint">' + esc((SPIN_FX.filter(x => x[0] === spinFxKey())[0] || SPIN_FX[0])[2]) +
+      (fxReduced ? '（系统开了「减少动态效果」，已自动关掉）' : '') + '</div>' +
+    '<div class="sec-title">旋转与反馈</div>' +
+    '<label class="row-switch"><span>旋转时长 <em id="durVal">' + s.duration + ' 秒</em></span>' +
+    '<input type="range" min="1.5" max="8" step="0.2" value="' + s.duration + '" data-field="duration"></label>' +
+    switchRow('sound', '音效（滴答 / 中奖音）', s.sound) +
+    switchRow('vibrate', '震动反馈（手机）', s.vibrate) +
+    switchRow('rolling', '旋转时标题跟随指针显示扇区名', s.rolling) +
+    switchRow('autoFlip', '文字自动翻转（始终保持正立）', s.autoFlip) +
+    '<div class="sec-title">记录</div>' +
+    '<label class="row-switch"><span>历史记录保留条数</span><select data-setting="historyLimit">' +
+    [20, 50, 100, 200].map(n => '<option value="' + n + '"' + (num(s.historyLimit) === n ? ' selected' : '') + '>' + n + ' 条</option>').join('') +
+    '</select></label>' +
+    '<div class="sec-title">转盘数据文件</div>' +
+    switchRow('autoSave', '改动后自动写回「' + WHEEL_DIR + '」文件夹', s.autoSave !== false) +
+    '<div class="hint">' + fileStatusText() + '</div>' +
+    '<div class="tools">' +
+      '<button class="mini" data-act="saveFolder">' + icon('download') + ' 保存回文件夹</button>' +
+      '<button class="mini" data-act="reloadFiles">' + icon('upload') + ' 从文件重新读取</button>' +
+    '</div>' +
+    '<div class="hint">网页上的增删改会<b>立刻存在浏览器里</b>（刷新、关掉都不会丢，也不会被文件覆盖）。' +
+      '要让「' + WHEEL_DIR + '」里的数据文件也跟着变：点一次「保存回文件夹」授权目录，之后开着上面开关就自动同步；' +
+      '想反过来用文件覆盖网页，点「从文件重新读取」。</div>' +
+    '<div class="sec-title">数据</div><div class="tools">' +
+    '<button class="mini" data-act="exportData">' + icon('download') + ' 导出备份</button>' +
+    '<button class="mini" data-act="importData">' + icon('upload') + ' 导入备份</button>' +
+    '<button class="mini" data-act="copyData">' + icon('copy') + ' 复制数据</button>' +
+    '<button class="mini danger" data-act="resetAll">' + icon('refresh') + ' 恢复默认</button>' +
+    '</div>' +
+    '<div class="hint">所有内容只保存在本机浏览器（localStorage），不会上传到任何服务器。换设备时用「导出备份」把数据带走。</div>' +
+    '<div class="hint">咒术转盘 · 纸张版 v3.0 · 共 ' + state.wheels.length + ' 个转盘 / ' +
+    state.wheels.reduce((a, w) => a + w.options.length, 0) + ' 个选项</div>';
+}
+function viewManager(){
+  // 「选项内容」不再占标签位：它是某个转盘的详情子页，从「转盘」页点名字进来
+  if (ui.mtab === 'content') {
+    const w = currentWheel();
+    return '<div class="sheet-head">' +
+        '<button class="icon-btn" data-act="back" aria-label="返回上一层">' + icon('back') + '</button>' +
+        '<h3 class="sheet-title">' + esc(w ? w.name : '') + ' · 选项内容</h3>' +
+        '<button class="icon-btn" data-act="close" aria-label="关闭面板">' + icon('close') + '</button></div>' +
+      '<div class="sheet-body">' + tabContent() + '</div>';
+  }
+  const tabs = [['wheels','转盘'], ['settings','设置'], ['history','记录']];
+  const body = ui.mtab === 'settings'? tabSettings()
+             : ui.mtab === 'history' ? tabHistory()
+             : tabWheels();
+  return '<div class="sheet-head"><div class="tabs" role="tablist">' +
+    tabs.map(t => '<button class="tab' + (ui.mtab === t[0] ? ' on' : '') + '" role="tab" aria-selected="' +
+      (ui.mtab === t[0]) + '" data-mtab="' + t[0] + '">' + t[1] + '</button>').join('') +
+    '</div><button class="icon-btn" data-act="close" aria-label="关闭面板">' + icon('close') + '</button></div>' +
+    '<div class="sheet-body">' + body + '</div>';
+}
+function viewResult(){
+  const w = currentWheel();
+  const label = ui.resultLabel || '？';
+  const opt = ui.resultOptId ? (w.options.filter(o => o.id === ui.resultOptId)[0] || null) : null;
+  const pend = state.flow.pendingId ? wheelById(state.flow.pendingId) : null;
+  const canRemove = !!opt && w.options.filter(o => num(o.weight) > 0).length > 1;
+  return '<div class="sheet-head">' +
+      '<span class="icon-btn" aria-hidden="true"></span>' +
+      '<h3 class="sheet-title">本次结果</h3>' +
+      '<button class="icon-btn" data-act="close" aria-label="关闭">' + icon('close') + '</button></div>' +
+    '<div class="sheet-body">' +
+      '<div class="result-hero">' + esc(label) + '</div>' +
+      '<div class="hint" style="text-align:center;margin-top:0">来自「' + esc(w.name) + '」' +
+        (pend ? ' · 下一站<b>' + esc(pend.name) + '</b>' : '') + '</div>' +
+      '<div class="action-list">' +
+        '<button class="action-row" data-act="copyResult"><span class="ai">' + icon('copy') + '</span>复制结果</button>' +
+        (pend ? '<button class="action-row" data-act="goPending"><span class="ai">' + icon('branch') + '</span>去下一站<em>' + esc(pend.name) + '</em></button>' : '') +
+        '<button class="action-row" data-act="spinAgain"><span class="ai">' + icon('refresh') + '</span>再抽一次</button>' +
+        (canRemove ? '<button class="action-row danger" data-act="removeWinner"><span class="ai">' + icon('trash') + '</span>从转盘移除该选项</button>' : '') +
+      '</div></div>';
+}
+/* 维度图的位置：'__top__' 最前 → 各转盘之后 → '' 最后 */
+function chartSlots(){ return ['__top__'].concat(state.wheels.map(w => w.id)).concat(['']); }
+function chartSlotIndex(c){ const s = chartSlots(); const a = (c.after == null) ? '' : c.after; const i = s.indexOf(a); return i < 0 ? s.length - 1 : i; }
+function moveChart(c, dir){
+  const s = chartSlots();
+  const i = clamp(chartSlotIndex(c) + dir, 0, s.length - 1);
+  c.after = s[i];
+  save();
+  return i;
+}
+function chartPositionText(c){
+  const a = (c.after == null) ? '' : c.after;
+  if (a === '__top__') return '列表最前';
+  if (!a) return '所有转盘之后';
+  const w = wheelById(a);
+  return w ? ('「' + w.name + '」之后') : '所有转盘之后';
+}
+function chartRowHtml(c){
+  return '<div class="row chart-item" data-id="' + c.id + '">' +
+      '<div class="wheel-top">' +
+        '<button class="wheel-open" data-act="openChartItem" data-id="' + c.id + '" title="查看这张维度图">' +
+          '<span class="wdot" style="background:' + chartInk() + '"></span>' +
+          '<span class="wname">' + esc(c.name) + '</span>' +
+        '</button>' +
+        '<span class="badge branch">维度图</span>' +
+        '<span class="wmeta">' + esc(chartPositionText(c)) + '</span>' +
+      '</div>' +
+      '<div class="row-acts">' +
+        '<button class="mini" data-act="chartUp" data-id="' + c.id + '" title="往前挪一位"' + (chartSlotIndex(c) === 0 ? ' disabled' : '') + '>' + icon('up') + '</button>' +
+        '<button class="mini" data-act="chartDown" data-id="' + c.id + '" title="往后挪一位"' + (chartSlotIndex(c) === chartSlots().length - 1 ? ' disabled' : '') + '>' + icon('down') + '</button>' +
+        '<button class="mini" data-act="openChartItem" data-id="' + c.id + '">查看</button>' +
+        '<button class="mini danger" data-act="delChart" data-id="' + c.id + '">' + icon('trash') + '</button>' +
+      '</div>' +
+    '</div>';
+}
+/* 默认下一站写着「结束」、但后面其实还有转盘的 → 多半是无意留的，提示一下 */
+function staleEndWheels(){
+  const normal = state.wheels.filter(w => !w.branch);
+  const lastId = normal.length ? normal[normal.length - 1].id : '';
+  return state.wheels.filter(w => w.next === END && w.id !== lastId);
+}
+function tabWheels(){
+  const cur = currentWheel();  const nBranch = state.wheels.filter(w => w.branch).length;
+  /* 维度图按「排在哪个转盘之后」插进列表里；没指定 / anchor 已删的排在最后 */
+  const byAnchor = {};
+  state.charts.forEach(c => {
+    const a = (c.after == null) ? '' : c.after;
+    const key = (a === '__top__') ? '__top__' : ((a && wheelById(a)) ? a : '');
+    (byAnchor[key] = byAnchor[key] || []).push(c);
+  });
+  const rows = [];
+  (byAnchor['__top__'] || []).forEach(c => rows.push(chartRowHtml(c)));   // 列表最前
+  state.wheels.forEach((w, i) => {
+    const on = cur && w.id === cur.id;
+    const dot = w.options.length ? colorOf(w, w.options[0], 0) : 'var(--line)';
+    rows.push('<div class="row wheel-row' + (on ? ' cur' : '') + (w.branch ? ' is-branch' : '') + '" ' +
+        'data-act="editWheel" data-id="' + w.id + '" title="进入「' + esc(w.name) + '」的选项内容（按住可拖动排序）">' +
+      '<div class="wheel-top">' +
+        '<button class="wheel-open" data-act="editWheel" data-id="' + w.id + '" ' +
+          'aria-label="管理「' + esc(w.name) + '」的选项内容">' +
+          '<span class="wdot" style="background:' + dot + '"></span>' +
+          '<span class="wname">' + esc(w.name) + '</span>' +
+        '</button>' +
+        '<button class="bchip' + (w.branch ? ' on' : '') + '" data-act="toggleBranch" ' +
+          'aria-pressed="' + (w.branch ? 'true' : 'false') + '" ' +
+          'title="' + (w.branch ? '分支转盘：不在默认顺序里，抽完回到来路' : '标记为分支转盘（不进默认顺序）') + '">分支</button>' +
+        (isGradeWheel(w) ? '<span class="badge">属性</span>' : '') +
+        '<span class="wmeta">' + w.options.length + ' 项' + (w.removeAfterPick ? ' · 抽中即移除' : '') + '</span>' +
+      '</div>' +
+      '<div class="row-acts">' +
+        '<button class="mini' + (on ? ' on' : '') + '" data-act="use">' + (on ? '使用中' : '切换') + '</button>' +
+        '<button class="mini" data-act="rename" title="改名">' + icon('edit') + '</button>' +
+        '<button class="mini" data-act="up" title="上移"' + (i === 0 ? ' disabled' : '') + '>' + icon('up') + '</button>' +
+        '<button class="mini" data-act="down" title="下移"' + (i === state.wheels.length - 1 ? ' disabled' : '') + '>' + icon('down') + '</button>' +
+        '<button class="mini" data-act="dup" title="复制这个转盘">' + icon('copy') + '</button>' +
+        '<button class="mini danger" data-act="del" title="删除这个转盘">' + icon('trash') + '</button>' +
+      '</div>' +
+    '</div>');
+    (byAnchor[w.id] || []).forEach(c => rows.push(chartRowHtml(c)));
+  });
+  (byAnchor[''] || []).forEach(c => rows.push(chartRowHtml(c)));   // 统计全部 / anchor 已删 → 排在最后
+  return '<div class="hint">点转盘框<b>任意位置</b> → 进它的<b>选项内容</b>管理；<b>按住拖动</b>可以调整顺序；点「切换」把它设为首页正在用的转盘。</div>' +
+    (staleEndWheels().length ? '<div class="hint warn">「' + staleEndWheels().map(w => esc(w.name)).join('」「') +
+      '」的默认下一站是<b>流程结束</b>，但后面还有转盘 —— 想让流程继续往下走，' +
+      '进它的「选项内容」页把默认下一站点「清除设置」，就会跟着列表顺序走。</div>' : '') +
+    '<div class="filestat' + (dirUsable ? ' on' : '') + '">' +
+      '<span>' + fileStatusShort() + '</span>' +
+      '<button class="mini" data-act="saveFolder">' + (dirUsable ? '立即写回' : '授权并写回') + '</button>' +
+    '</div>' +
+    '<div class="list">' + rows.join('') + '</div>' +
+    '<button class="btn block" data-act="newPick">' + icon('plus') + ' 新建（转盘 / 属性维度图）</button>' +
+    '<div class="hint"><b>属性维度图</b>排在哪个转盘后面，就统计<b>它之前</b>抽过的属性转盘（没抽到的按 0 算）。' +
+      '数据是<b>打开时按当前进度实时统计</b>的 —— 所以先放好位置，等流程跑到那里（或轮次结束）会自动展示该有的数据。' +
+      '在「记录」页新建与管理。</div>' +
+    '<div class="hint"><b>分支转盘</b>（点行里的「分支」标记）不参与默认顺序，只能被别的转盘的<b>选项跳转目标</b>指到；' +
+      '它抽完若没给该选项设目标，会自动接着「拐进来的那个转盘」的默认下一站继续。当前有 <b>' + nBranch + '</b> 个分支转盘。</div>' +
+    '<div class="hint">列表顺序 = 默认顺序 = 「按列表顺序串联」的顺序；拖动或 ↑↓ 都能调整。' +
+      '顺序会<b>写进数据文件</b>：文件名前的 <b>01/02…</b>、每个文件里的 <b>"order" 字段</b>，以及 <b>_index.js</b> 清单里的排列。</div>' +
+    '<div class="hint">每个转盘的<b>默认下一站</b>和每个选项的<b>跳转目标</b>，都在它的「选项内容」页里设置；' +
+      '流程的整体开关在「设置」页。</div>';
+}
+function tabContent(){
+  const w = currentWheel();
+  const list = w.options.length
+    ? '<div class="list">' + w.options.map((o, i) => {
+        const off = num(o.weight) <= 0;
+        const nx = o.next ? { set:true, text:slotText(o.next) }
+                          : { set:false, text:'跟随默认：' + defaultTargetLabel(w) };
+        return '<div class="opt-card' + (off ? ' off' : '') + '" data-id="' + o.id + '">' +
+          '<div class="opt-line opt-row">' +
+            '<input type="color" data-field="color" value="' + colorOf(w, o, i) + '" title="扇区颜色">' +
+            '<input class="opt-input" type="text" data-field="label" value="' + esc(o.label) + '" placeholder="选项文字" maxlength="20">' +
+            '<input class="w-input" type="number" min="0" step="1" data-field="weight" value="' + num(o.weight) + '" title="权重">' +
+            '<button class="mini" data-act="autoColor" title="恢复跟随主题配色">A</button>' +
+            '<button class="mini danger" data-act="delOpt">' + icon('trash') + '</button>' +
+          '</div>' +
+          '<button class="next-btn' + (nx.set ? ' set' : '') + '" data-act="pickNext">' +
+            '<span class="nx-arrow">→</span><span class="nx-t">' + esc(nx.text) + '</span></button>' +
+        '</div>';
+      }).join('') + '</div>'
+    : '<div class="empty">还没有选项，点「添加选项」或「批量编辑」开始</div>';
+  return '<div class="edit-head">' +
+      '<span class="eh-label">编辑中</span>' +
+      '<select id="wheelPicker" aria-label="切换要编辑的转盘">' +
+        state.wheels.map(x => '<option value="' + x.id + '"' + (x.id === w.id ? ' selected' : '') + '>' + esc(x.name) + '</option>').join('') +
+      '</select>' +
+      '<button class="mini" data-act="rename" data-id="' + w.id + '" title="给这个转盘改名">' + icon('edit') + '</button>' +
+    '</div>' +
+    '<button class="next-btn' + (w.next ? ' set' : '') + '" data-act="pickDefTarget">' +
+      '<span class="nx-arrow">→</span><span class="nx-t">默认下一站：' +
+      esc(w.next ? slotText(w.next) : ('跟随列表顺序 → ' + defaultTargetLabel(w))) + '</span></button>' +
+    '<div class="tools">' +
+      '<button class="mini" data-act="addOpt">' + icon('plus') + ' 添加选项</button>' +
+      '<button class="mini" data-act="batch">批量编辑</button>' +
+      '<button class="mini" data-act="shuffle">' + icon('shuffle') + ' 打乱顺序</button>' +
+      '<button class="mini" data-act="recolor">重新配色</button>' +
+      '<button class="mini danger" data-act="clearOpts">清空</button>' +
+    '</div>' +
+    '<label class="row-switch"><span>抽中后从转盘移除该选项</span>' +
+      '<input type="checkbox" data-wheel-toggle="removeAfterPick"' + (w.removeAfterPick ? ' checked' : '') + '><i></i></label>' +
+    '<label class="row-switch"><span>计入属性维度图 <em>' +
+        (w.grade === true ? '强制计入' : w.grade === false ? '已排除' : (isGradeWheel(w) ? '自动识别：是' : '自动识别：否')) + '</em></span>' +
+      '<input type="checkbox" data-wheel-toggle="grade"' + (w.grade === true ? ' checked' : '') + '><i></i></label>' +
+    '<div class="hint">带 <b>E / D / C / B / A / S / SS / SSS / EX</b> 这类等级的转盘会自动计入。' +
+      '抽完一轮后可以在结果面板或「记录」页看维度图。' +
+      '<button class="mini" data-act="gradeAuto" data-id="' + w.id + '" style="margin-left:6px">恢复自动判断</button></div>' +
+    '<div class="hint">权重越大，扇区越大、被抽中的概率越高（例如 <b>五条悟*3</b> 的扇区面积是普通选项的 3 倍）。权重填 <b>0</b> 表示停用该选项，它不会出现在转盘上。</div>' +
+    list +
+    '<div class="hint">颜色块可单独改色，点 <b>A</b> 恢复跟随主题。</div>';
+}
+function viewBatch(){
+  const w = currentWheel();
+  return '<div class="sheet-head">' +
+    '<button class="icon-btn" data-act="back">' + icon('back') + '</button>' +
+    '<h3 class="sheet-title">批量编辑 · ' + esc(w.name) + '</h3>' +
+    '<button class="icon-btn" data-act="close">' + icon('close') + '</button></div>' +
+    '<div class="sheet-body">' +
+    '<div class="hint">每行一个选项；用 <b>名称*权重</b>（如 <b>五条悟*3</b>）设置权重，不写权重就是 1。</div>' +
+    '<textarea class="ta" id="batchText" spellcheck="false">' +
+    esc(w.options.map(o => num(o.weight) === 1 ? o.label : o.label + '*' + num(o.weight)).join('\n')) + '</textarea>' +
+    '<div class="tools">' +
+      '<button class="btn" data-act="batchApply" data-mode="replace">覆盖当前选项</button>' +
+      '<button class="btn ghost" data-act="batchApply" data-mode="append">追加到末尾</button>' +
+    '</div><div class="hint">覆盖会整体替换该转盘的所有选项。</div></div>';
+}
+/* ============================== 导航：单一视图栈 + 返回键 ==============================
+   · 所有面板都是「压栈」的一层，任何位置返回 = 退回上一层
+   · 浏览器 / 安卓返回手势、Esc、左上返回键 三者走同一条 navBack()
+   · 关掉整个面板时把之前压入的历史条目一次性回退，避免污染浏览历史
+   ================================================================================= */
+const NAV = { stack: [], swallowPop: 0, lastFocus: null, hideTimer: null };
+const scrollMemo = {};
+function isOverlayOpen(){ return $('#overlay').classList.contains('open'); }
+function topNav(){ return NAV.stack.length ? NAV.stack[NAV.stack.length - 1] : null; }
+function navDepth(){ return Math.max(0, NAV.stack.length - 1); }   // 已压入的历史条目数
+function navHist(){ try { history.pushState({ nav: NAV.stack.length }, ''); } catch(e){} }
+function showOverlay(){
+  const ov = $('#overlay');
+  NAV.lastFocus = document.activeElement;
+  ov.classList.remove('closing');
+  ov.classList.add('open');
+}
+function hideOverlay(){
+  const ov = $('#overlay');
+  if (!ov.classList.contains('open')) return;
+  ov.classList.add('closing');
+  clearTimeout(NAV.hideTimer);
+  NAV.hideTimer = setTimeout(() => {
+    ov.classList.remove('open', 'closing');
+    const lf = NAV.lastFocus;
+    if (lf && lf.focus && document.contains(lf)) { try { lf.focus(); } catch(e){} }
+  }, 200);
+}
+/* 栈顶永远是「当前状态」；返回 = 弹出栈顶并应用新的栈顶 */
+function navPush(entry, dir){
+  NAV.stack.push(entry);
+  ui.view = entry.view;
+  if (entry.mtab) ui.mtab = entry.mtab;
+  navHist();
+  renderSheet(dir || 'push');
+}
+function navTo(view, opts){
+  opts = opts || {};
+  if (!NAV.stack.length) NAV.stack.push({ view:'none', mtab:ui.mtab });   // 根：主页
+  const cur = topNav();
+  if (cur && cur.view === view && !opts.force) {                          // 已在同一层：只切标签
+    if (opts.mtab && opts.mtab !== ui.mtab) { navPush({ view:view, mtab:opts.mtab }, 'swap'); return; }
+    if (opts.mtab) ui.mtab = opts.mtab;
+    renderSheet('swap');
+    return;
+  }
+  const first = !isOverlayOpen();
+  navPush({ view:view, mtab: opts.mtab || ui.mtab }, opts.dir || 'push');
+  if (first) {
+    showOverlay();
+    const sh = $('#sheet');
+    if (sh && sh.focus) { try { sh.focus({ preventScroll:true }); } catch(e){} }
+  }
+}
+function navBack(){
+  if (navDepth() <= 0) {                      // 已在根：交给浏览器（真的退出页面）
+    if (isOverlayOpen()) { NAV.stack.length = 0; ui.view = 'none'; hideOverlay(); return true; }
+    return false;
+  }
+  NAV.stack.pop();
+  const prev = topNav();
+  ui.view = prev.view;
+  if (prev.mtab) ui.mtab = prev.mtab;
+  if (prev.view === 'none') hideOverlay();
+  else renderSheet('pop');
+  return true;
+}
+function navCloseAll(){
+  const n = navDepth();
+  NAV.stack.length = 0;
+  ui.view = 'none';
+  hideOverlay();
+  if (n > 0) { NAV.swallowPop = 1; try { history.go(-n); } catch(e){} }
+}
+/* 界面上的「返回 / Esc」：本地退一层，同时把浏览器历史也退一格，
+   否则会留下“按了没反应”的历史条目（下次真的按返回键会空跳） */
+function navGoBack(){
+  if (chartAutoTimer) { clearTimeout(chartAutoTimer); chartAutoTimer = null; }
+  if (navDepth() <= 0) { if (isOverlayOpen()) navCloseAll(); return false; }
+  NAV.swallowPop++;
+  try { history.go(-1); } catch(e){ NAV.swallowPop--; }
+  return navBack();
+}
+/* 兼容旧调用点 */
+function openSheet(view, mtab){ navTo(view, mtab ? { mtab:mtab } : null); }
+function closeSheet(){ navCloseAll(); }
+
+function renderSheet(dir){
+  const sheet = $('#sheet');
+  const key = ui.view + '|' + ui.mtab;
+  const prevBody = sheet.querySelector('.sheet-body');
+  if (prevBody && sheet.dataset.scrollKey) scrollMemo[sheet.dataset.scrollKey] = prevBody.scrollTop;
+  let cls = 'sheet', html = '';
+  if (ui.view === 'manager')      { cls = 'sheet full'; html = viewManager(); }
+  else if (ui.view === 'batch')   { html = viewBatch(); }
+  else if (ui.view === 'target')  { html = viewTarget(); }
+  else if (ui.view === 'chart')   { cls = 'sheet chart-sheet'; html = viewChart(); }
+  else if (ui.view === 'newpick') { html = viewNewPick(); }
+  else if (ui.view === 'newchart'){ html = viewNewChart(); }
+  else if (ui.view === 'result')  { html = viewResult(); }
+  sheet.className = cls;
+  const ovEl = $('#overlay');
+  if (ovEl) ovEl.classList.toggle('center', ui.view === 'chart');   // 维度图：居中显示
+  sheet.innerHTML = '<div class="sheet-inner' + (dir ? ' ' + dir : '') + '">' + html + '</div>';
+  const body = sheet.querySelector('.sheet-body');
+  if (body) body.scrollTop = scrollMemo[key] || 0;
+  sheet.dataset.scrollKey = key;
+  if (ui.view === 'chart') {                     // 维度图：画布就绪后播放生长/变形动画
+    const dims = ui.chartDims || [];
+    const from = ui.chartFrom || null;
+    requestAnimationFrame(() => {
+      const cv = $('#chartCv');
+      if (cv && dims.length) startChartAnim(cv, dims, from);
+    });
+  }
+}
+
+/* ============================== 动作处理 ============================== */
+function refreshTitle(){
+  const w = currentWheel();
+  $('#wheelName').textContent = w ? w.name : '咒术转盘';
+  renderFlowBar();
+}
+function applyTheme(){
+  document.documentElement.dataset.theme = state.settings.theme === 'dark' ? 'dark' : 'light';
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.content = state.settings.theme === 'dark' ? '#141317' : '#F3EFE4';
+  requestDraw();
+}
+function moveWheel(id, dir){
+  const i = state.wheels.findIndex(w => w.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= state.wheels.length) return;
+  const t = state.wheels[i]; state.wheels[i] = state.wheels[j]; state.wheels[j] = t;
+  save(); renderSheet();
+}
+function shuffleArr(a){
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+function exportData(){
+  try {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '咒术转盘备份-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast('已导出备份文件');
+  } catch(e){ toast('导出失败'); }
+}
+function dropLayerIf(view){ const t = topNav(); if (t && t.view === view) NAV.stack.pop(); }
+async function handleAction(act, id, el){
+  const w = currentWheel();
+  switch (act) {
+    case 'close': closeSheet(); break;
+    case 'back': navGoBack(); break;
+    case 'pick':
+      state.currentId = id; save(); refreshTitle(); requestDraw(); closeSheet();
+      toast('已切换到「' + currentWheel().name + '」'); break;
+    case 'openManager': navTo('manager', { mtab: el.dataset.goto || 'wheels' }); break;
+    case 'addWheel': {
+      const name = await askDialog({ title:'新建转盘', desc:'给新转盘起个名字', value:'新转盘', ok:'创建' });
+      if (name === null) return;
+      const nw = makeWheel((name || '').trim() || '新转盘', ['选项 1', '选项 2', '选项 3', '选项 4']);
+      state.wheels.push(nw); state.currentId = nw.id;
+      save(); refreshTitle(); requestDraw();
+      dropLayerIf('newpick');
+      navTo('manager', { mtab:'content' });        // 建完直接进它的选项内容，返回即回列表
+      toast('已创建「' + nw.name + '」');
+      break;
+    }
+    case 'newPick': navTo('newpick'); break;
+    case 'pickRoot':
+      ui.targetCtx = { kind:'root', wheel:'', opt:'', cur: state.flow.rootId || '' };
+      navTo('target'); break;
+    case 'pickDefTarget':
+      ui.targetCtx = { kind:'def', wheel:w.id, opt:'', cur: w.next || '' };
+      navTo('target'); break;
+    case 'chartUp': case 'chartDown': {
+      const c = state.charts.filter(x => x.id === id)[0];
+      if (!c) break;
+      moveChart(c, act === 'chartUp' ? -1 : 1);
+      renderSheet('swap');
+      toast('维度图位置：' + chartPositionText(c));
+      break;
+    }
+    case 'openChartItem': {
+      const c = state.charts.filter(x => x.id === id)[0];
+      if (!c) break;
+      ui.chartItem = c;
+      navTo('chart');
+      break;
+    }
+    case 'newChartItem':
+      ui.newChartName = ui.newChartName || ('属性维度图 ' + (state.charts.length + 1));
+      navTo('newchart');
+      break;
+    case 'setAnchor': {
+      const inp = $('#newChartName');
+      if (inp && inp.value) ui.newChartName = inp.value;
+      ui.newChartAnchor = el.dataset.val || '';
+      renderSheet('swap');
+      break;
+    }
+    case 'doCreateChart': {
+      const inp = $('#newChartName');
+      const nm = inp ? inp.value : ui.newChartName;
+      const r = createChartSnapshot(nm, ui.newChartAnchor || '');
+      if (!r.ok) { toast(r.msg); break; }
+      ui.chartItem = r.item;
+      dropLayerIf('newchart');
+      navTo('chart');
+      toast(r.prev ? '已生成，从「' + r.prev.name + '」变形过来' : '已生成第一张维度图');
+      break;
+    }
+    case 'delChart': {
+      const c = state.charts.filter(x => x.id === id)[0];
+      if (!c) break;
+      const okDel = await askDialog({ title:'删除维度图', desc:'确定删除「' + c.name + '」？删掉后它的快照就没了。', ok:'删除', danger:true });
+      if (!okDel) return;
+      state.charts = state.charts.filter(x => x.id !== id);
+      if (ui.chartItem && ui.chartItem.id === id) ui.chartItem = null;
+      save();
+      if (ui.view === 'chart') navGoBack();
+      else { ui.view = 'manager'; renderSheet('swap'); }
+      toast('已删除');
+      break;
+    }
+    case 'use':
+      state.currentId = id; state.flow.retStack = []; state.flow.paused = false;
+      save(); refreshTitle(); requestDraw(); renderSheet();
+      toast('已切换到「' + currentWheel().name + '」'); break;
+    case 'rename': {
+      const x = wheelById(id);
+      if (!x) break;
+      const name = await askDialog({ title:'重命名转盘', desc:'数据文件里的转盘名也会用这个名字', value:x.name, ok:'保存' });
+      if (name === null) return;
+      const v = String(name).trim();
+      if (!v) { toast('名字不能为空'); break; }
+      x.name = v;
+      save(); refreshTitle(); renderSheet();
+      toast('已改名为「' + v + '」');
+      break;
+    }
+    case 'dup': {
+      const src = state.wheels.filter(x => x.id === id)[0];
+      if (!src) break;
+      const nw = { id:uid(), name:src.name + ' 副本', removeAfterPick:src.removeAfterPick,
+                   options:src.options.map(o => ({ id:uid(), label:o.label, weight:o.weight, color:o.color })) };
+      state.wheels.splice(state.wheels.indexOf(src) + 1, 0, nw);
+      save(); renderSheet(); toast('已复制转盘'); break;
+    }
+    case 'del': {
+      if (state.wheels.length <= 1) { toast('至少要保留一个转盘'); break; }
+      const wheel = state.wheels.filter(x => x.id === id)[0];
+      if (!wheel) break;
+      const ok = await askDialog({ title:'删除转盘', desc:'确定删除「' + wheel.name + '」及其 ' + wheel.options.length + ' 个选项？', ok:'删除', danger:true });
+      if (!ok) return;
+      state.wheels = state.wheels.filter(x => x.id !== id);
+      if (state.currentId === id) state.currentId = state.wheels[0].id;
+      save(); refreshTitle(); requestDraw(); renderSheet(); break;
+    }
+    case 'toggleBranch': {
+      const x = wheelById(id);
+      if (!x) break;
+      x.branch = !x.branch;
+      if (x.branch) { x.next = ''; }                 // 分支转盘不参与默认链
+      save(); renderSheet(); renderFlowBar();
+      toast(x.branch
+        ? '「' + x.name + '」已标记为分支转盘：不进默认顺序，只能被选项分支指到'
+        : '「' + x.name + '」已恢复为普通转盘');
+      break;
+    }
+    case 'up': moveWheel(id, -1); break;
+    case 'down': moveWheel(id, 1); break;
+    case 'addOpt':
+      w.options.push(makeOption(''));
+      save(); renderSheet(); requestDraw();
+      (function(){ const rows = $$('#sheet .opt-row'); const last = rows[rows.length - 1];
+        if (last) { const inp = last.querySelector('.opt-input'); if (inp) inp.focus(); } })();
+      break;
+    case 'delOpt': w.options = w.options.filter(o => o.id !== id); save(); renderSheet(); requestDraw(); break;
+    case 'autoColor':
+      (w.options.filter(o => o.id === id)[0] || {}).color = null;
+      save(); renderSheet(); requestDraw(); break;
+    case 'shuffle': shuffleArr(w.options); save(); renderSheet(); requestDraw(); break;
+    case 'recolor': w.options.forEach(o => { o.color = null; }); save(); renderSheet(); requestDraw(); toast('已按主题重新配色'); break;
+    case 'clearOpts': {
+      const ok = await askDialog({ title:'清空选项', desc:'将删除「' + w.name + '」的全部选项', ok:'清空', danger:true });
+      if (!ok) return;
+      w.options = []; save(); renderSheet(); requestDraw(); break;
+    }
+    case 'batch': navTo('batch'); break;
+    case 'batchApply': {
+      const mode = el.dataset.mode;
+      const text = ($('#batchText') || {}).value || '';
+      const list = parseBatch(text);
+      if (!list.length) { toast('没有解析到内容'); break; }
+      const opts = list.map(o => makeOption(o.label, o.weight));
+      w.options = mode === 'append' ? w.options.concat(opts) : opts;
+      save(); requestDraw();
+      if (ui.view === 'batch') navGoBack();          // 回到进来时那一页（并把栈同步好）
+      else { ui.view = 'manager'; ui.mtab = 'content'; renderSheet('swap'); }
+      toast((mode === 'append' ? '已追加 ' : '已覆盖为 ') + opts.length + ' 个选项');
+      break;
+    }
+    case 'setPalette': state.settings.palette = el.dataset.val; save(); renderSheet(); requestDraw(); break;
+    case 'setTheme': state.settings.theme = el.dataset.val; applyTheme(); save(); renderSheet(); break;
+    case 'exportData': exportData(); break;
+    case 'saveFolder': saveToFolder(); break;
+    case 'reloadFiles': reloadFromFiles(); break;
+    case 'importData': $('#fileImport').click(); break;
+    case 'copyData': copyText(JSON.stringify(state)); break;
+    case 'resetAll': {
+      const ok = await askDialog({ title:'恢复默认', desc:'将清除全部转盘、选项与历史记录，恢复为初始内容', ok:'恢复', danger:true });
+      if (!ok) return;
+      state = seed(); save(); applyTheme(); refreshTitle(); requestDraw(); renderSheet(); toast('已恢复默认内容'); break;
+    }
+    case 'clearHistory': {
+      const ok = await askDialog({ title:'清空记录', desc:'确定清空全部抽奖历史？', ok:'清空', danger:true });
+      if (!ok) return;
+      state.history = []; save(); renderSheet(); break;
+    }
+    case 'copyHistory':
+      copyText(state.history.map(h => h.label + '（' + (h.wheel || '') + '）').join('\n')); break;
+
+    /* ---- 分支流程 ---- */
+    case 'pickNext': {
+      const o = optById(w.id, id);
+      if (!o) break;
+      ui.targetCtx = { kind:'opt', wheel:w.id, opt:o.id, cur:o.next || '' };
+      navTo('target'); break;
+    }
+    case 'setTarget': {
+      const ctx = ui.targetCtx || {}, val = el.dataset.val || '';
+      if (ctx.kind === 'root') state.flow.rootId = val;
+      else if (ctx.kind === 'def') { const x = wheelById(ctx.wheel); if (x) x.next = val; }
+      else if (ctx.kind === 'opt') { const o = optById(ctx.wheel, ctx.opt); if (o) o.next = val; }
+      if (val) state.flow.enabled = true;
+      save();
+      navBack(); renderFlowBar();
+      toast(val ? '已设置为「' + slotText(val) + '」' : '已清除设置');
+      break;
+    }
+    case 'setSpinFx': {
+      state.settings.spinFx = el.dataset.val || 'bounce';
+      save(); renderSheet('swap');
+      const fx = SPIN_FX.filter(x => x[0] === spinFxKey())[0];
+      toast('旋转效果：' + fx[1]);
+      break;
+    }
+    case 'setWheelColor': {
+      state.settings.wheelColor = el.dataset.val || 'jin';
+      save(); renderSheet('swap');
+      toast('法轮颜色：' + (CHART_INKS.filter(x => x[0] === wheelInkKey())[0][1]));
+      break;
+    }
+    case 'setChartColor': {
+      state.settings.chartColor = el.dataset.val || 'zhu';
+      save(); renderSheet('swap');
+      toast('维度图颜色：' + (CHART_INKS.filter(x => x[0] === chartInkKey())[0][1]));
+      break;
+    }
+    case 'expandFlow': expandFlowBar(); break;
+    case 'openChart': ui.chartItem = null; navTo('chart'); break;
+    case 'copyChart': copyText(chartSummary((ui.chartDims && ui.chartDims.length) ? ui.chartDims : chartDims())); break;
+    case 'resetFlow2': closeSheet(); setTimeout(() => resetFlow(), 220); break;
+    case 'gradeAuto': {
+      const x = wheelById(id);
+      if (!x) break;
+      x.grade = null; save(); renderSheet('swap');
+      toast('「' + x.name + '」已恢复自动判断（' + (isGradeWheel(x) ? '会计入' : '不会计入') + '属性图）');
+      break;
+    }
+    case 'copyResult': copyText(ui.resultLabel || resultEl.textContent); break;
+    case 'spinAgain': closeSheet(); setTimeout(() => spin(), 240); break;
+    case 'removeWinner': {
+      const ww = currentWheel();
+      const oo = ww.options.filter(x => x.id === ui.resultOptId)[0];
+      if (!oo) { toast('这个选项已经不在了'); break; }
+      if (ww.options.filter(x => num(x.weight) > 0).length <= 1) { toast('至少要保留一个选项'); break; }
+      ww.options = ww.options.filter(x => x.id !== oo.id);
+      ui.resultOptId = '';
+      save(); requestDraw(); closeSheet();
+      toast('已把「' + oo.label + '」移出转盘');
+      break;
+    }
+    case 'clearSlot': {
+      const slot = el.closest ? el.closest('[data-slot]') : null;
+      if (!slot) break;
+      const kind = slot.dataset.slot;
+      if (kind === 'root') state.flow.rootId = '';
+      else if (kind === 'def') { const x = wheelById(slot.dataset.wheel); if (x) x.next = ''; }
+      else { const o = optById(slot.dataset.wheel, slot.dataset.opt); if (o) o.next = ''; }
+      save(); renderSheet(); renderFlowBar(); toast('已清除该连接'); break;
+    }
+    case 'toggleNode': ui.treeOpen[el.dataset.key] = !ui.treeOpen[el.dataset.key]; renderSheet(); break;
+    case 'expandAll': ui.treeOpen = {}; renderSheet(); break;
+    case 'editWheel': {
+      const wid = id || (el && el.dataset ? el.dataset.id : '');
+      const x = wheelById(wid);
+      if (!x) break;
+      state.currentId = x.id; save(); refreshTitle(); requestDraw();
+      // 选项内容永远是「转盘列表」的下一层：不在列表上就先垫一层，保证返回必定回到列表
+      const atList = isOverlayOpen() && ui.view === 'manager' && ui.mtab === 'wheels';
+      if (!atList) navTo('manager', { mtab:'wheels', force:true });
+      navTo('manager', { mtab:'content', force:true });
+      break;
+    }
+    case 'chainOrder': {
+      const normal = state.wheels.filter(x => !x.branch);      // 分支转盘不参与默认顺序
+      normal.forEach((x, i) => { x.next = i < normal.length - 1 ? normal[i + 1].id : END; });
+      state.wheels.filter(x => x.branch).forEach(x => { x.next = ''; });
+      if (!state.flow.rootId) state.flow.rootId = (normal[0] || state.wheels[0]).id;
+      state.flow.enabled = true; state.flow.path = []; state.flow.pendingId = ''; state.flow.retStack = [];
+      save(); renderSheet(); renderFlowBar();
+      toast('已按列表顺序串联 ' + normal.length + ' 个转盘' + (state.wheels.length - normal.length ? '（跳过了 ' + (state.wheels.length - normal.length) + ' 个分支转盘）' : ''));
+      break;
+    }
+    case 'clearLinks': {
+      const ok = await askDialog({ title:'清除所有连接', desc:'将删除全部「默认下一站」与选项上的跳转设置', ok:'清除', danger:true });
+      if (!ok) return;
+      state.wheels.forEach(x => { x.next = ''; x.options.forEach(o => { o.next = ''; }); });
+      state.flow.rootId = ''; state.flow.path = []; state.flow.pendingId = '';
+      save(); renderSheet(); renderFlowBar(); toast('已清除所有连接'); break;
+    }
+    case 'gotoStep': {
+      const f = state.flow, i = num(el.dataset.idx), p = f.path[i];
+      if (!p) break;
+      clearJump();
+      f.path = f.path.slice(0, i); f.pendingId = ''; f.finished = false;
+      ui.flowCollapsed = false;
+      save();
+      if (p.wheelId && wheelById(p.wheelId)) switchTo(p.wheelId, { silent:true });
+      else renderFlowBar();
+      break;
+    }
+    case 'resetFlow': ui.flowCollapsed = false; resetFlow(); break;
+    case 'goPending': {
+      const pid = state.flow.pendingId;
+      state.flow.pendingId = '';
+      state.flow.paused = false;                    // 手动点「下一站」= 明确要继续
+      if (pid && wheelById(pid)) switchTo(pid, { silent:false, spin:false });
+      else renderFlowBar();
+      break;
+    }
+    case 'resumeFlow': {
+      state.flow.paused = false;
+      save(); renderFlowBar();
+      toast('已恢复自动跳转');
+      break;
+    }
+    case 'backFlow': navGoBack(); break;
+  }
+}
+
+
+/* ---- 转盘列表：按住 / 长按拖动排序 ---- */
+let rowHold = null, rowDrag = null, suppressClickUntil = 0;
+function clearRowHold(){ if (rowHold) { clearTimeout(rowHold.timer); rowHold = null; } }
+function beginRowDrag(){
+  if (!rowHold) return;
+  const el = rowHold.el, list = el.closest('.list');
+  const rect = el.getBoundingClientRect();
+  rowDrag = { el:el, list:list, id:el.dataset.id, startY:rowHold.y, target:null, line:null };
+  rowHold = null;
+  el.classList.add('dragging');
+  document.body.classList.add('row-dragging');
+  if (list) {
+    const line = document.createElement('div');
+    line.className = 'drop-line';
+    list.appendChild(line);
+    rowDrag.line = line;
+  }
+  vibrate(12);
+  beep(560, 0.05, 'sine', 0.028);
+  updateDropLine(rect.top + rect.height / 2);
+}
+function updateDropLine(y){
+  const d = rowDrag;
+  if (!d || !d.line || !d.list) return;
+  const rows = $$('.wheel-row', d.list).filter(r => r !== d.el);
+  let idx = rows.length;
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i].getBoundingClientRect();
+    if (y < r.top + r.height / 2) { idx = i; break; }
+  }
+  d.target = idx;
+  const ref = rows[idx];
+  const top = ref ? ref.offsetTop : d.list.scrollHeight;
+  d.line.style.top = Math.max(0, top - 1) + 'px';
+}
+function autoScrollBy(y){
+  const body = $('#sheet .sheet-body');
+  if (!body) return;
+  const r = body.getBoundingClientRect();
+  if (y < r.top + 44) body.scrollTop = Math.max(0, body.scrollTop - 12);
+  else if (y > r.bottom - 44) body.scrollTop = body.scrollTop + 12;
+}
+function onRowPointerMove(e){
+  if (rowHold) {
+    const moved = Math.abs(e.clientY - rowHold.y) + Math.abs(e.clientX - rowHold.x);
+    if (rowHold.type === 'mouse') { if (moved > 5) beginRowDrag(); }
+    else if (moved > 10) clearRowHold();          // 触屏上移动＝滚动列表，不算长按
+  }
+  if (!rowDrag) return;
+  rowDrag.el.style.transform = 'translateY(' + (e.clientY - rowDrag.startY) + 'px)';
+  autoScrollBy(e.clientY);
+  updateDropLine(e.clientY);
+  if (e.cancelable) e.preventDefault();
+}
+function endRowDrag(drop){
+  clearRowHold();
+  const d = rowDrag;
+  if (!d) return;
+  rowDrag = null;
+  suppressClickUntil = Date.now() + 400;          // 拖完别把这次松手当成点击
+  d.el.classList.remove('dragging');
+  d.el.style.transform = '';
+  document.body.classList.remove('row-dragging');
+  if (d.line && d.line.parentNode) d.line.parentNode.removeChild(d.line);
+  if (!drop) return;
+  const from = state.wheels.findIndex(w => w.id === d.id);
+  if (from < 0) return;
+  const arr = state.wheels.slice();
+  const moved = arr.splice(from, 1)[0];
+  const to = Math.max(0, Math.min(arr.length, d.target == null ? from : d.target));
+  if (to === from) return;
+  arr.splice(to, 0, moved);
+  state.wheels = arr;
+  save(); renderSheet('swap');
+  toast('「' + moved.name + '」已移到第 ' + (to + 1) + ' 位');
+}
+
+/* ============================== 事件绑定 ============================== */
+function bindEvents(){
+  $('#btnSwitch').addEventListener('click', () => navTo('manager', { mtab:'wheels' }));
+  $('#btnPanel').addEventListener('click', () => navTo('manager', { mtab:'settings' }));
+  $('#btnEdit').addEventListener('click', () => {
+    const w = currentWheel();
+    if (w) handleAction('editWheel', w.id, { dataset:{ id:w.id } });
+  });
+  canvas.addEventListener('click', spin);
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  resultEl.addEventListener('click', () => {
+    if (spinning) return;
+    const t = resultEl.textContent.trim();
+    if (!t || t === '？') return;
+    clearJump();                                  // 打开结果面板时暂停自动跳转
+    navTo('result');
+  });
+
+  const overlay = $('#overlay');
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeSheet(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (isOverlayOpen()) { e.preventDefault(); navGoBack(); }
+      return;
+    }
+    if (e.code === 'Space' && !isOverlayOpen()) {
+      const tag = (document.activeElement || {}).tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') { e.preventDefault(); spin(); }
+    }
+  });
+  window.addEventListener('popstate', () => {
+    if (NAV.swallowPop > 0) { NAV.swallowPop--; return; }   // 自己回退的历史，忽略
+    if (navDepth() > 0) navBack();
+    else if (isOverlayOpen()) { NAV.stack.length = 0; ui.view = 'none'; hideOverlay(); }
+  });
+  try { history.replaceState({ nav:0 }, ''); } catch(e){}
+
+  const sheet = $('#sheet');
+  sheet.addEventListener('click', e => {
+    if (Date.now() < suppressClickUntil) { e.preventDefault(); e.stopPropagation(); return; }   // 刚拖完，忽略这次点击
+    const tab = e.target.closest('[data-mtab]');
+    if (tab) {
+      const t = tab.dataset.mtab;
+      if (t === ui.mtab) return;
+      navPush({ view: ui.view, mtab: t }, 'swap');     // 标签也算一层：返回=回到上一个标签
+      return;
+    }
+    const btn = e.target.closest('[data-act]');
+    if (btn) {
+      const row = btn.closest('[data-id]');
+      handleAction(btn.dataset.act, row ? row.dataset.id : null, btn);
+      return;
+    }
+    const slot = e.target.closest('[data-slot]');
+    if (slot) {
+      const kind = slot.dataset.slot, hostW = slot.dataset.wheel || '', oid = slot.dataset.opt || '';
+      const cur = kind === 'root' ? (state.flow.rootId || '')
+                : (kind === 'def' ? ((wheelById(hostW) || {}).next || '')
+                                  : ((optById(hostW, oid) || {}).next || ''));
+      ui.targetCtx = { kind:kind, wheel:hostW, opt:oid, cur:cur };
+      navTo('target');
+    }
+  });
+  sheet.addEventListener('input', e => {
+    const t = e.target, field = t.dataset.field;
+    if (!field) return;
+    const row = t.closest('[data-id]'), id = row ? row.dataset.id : null;
+    if (field === 'name') {
+      const wheel = state.wheels.filter(x => x.id === id)[0];
+      if (!wheel) return;
+      wheel.name = t.value; refreshTitle(); saveSoon(); return;
+    }
+    if (field === 'duration') {
+      state.settings.duration = clamp(num(t.value) || 4.2, 1.5, 8);
+      const d = $('#durVal'); if (d) d.textContent = state.settings.duration + ' 秒';
+      saveSoon(); return;
+    }
+    if (field === 'wheelAlpha') {
+      state.settings.wheelAlpha = clamp(num(t.value) || 0.4, 0.05, 1);
+      const d = $('#wAlphaVal'); if (d) d.textContent = Math.round(state.settings.wheelAlpha * 100) + '%';
+      saveSoon(); return;
+    }
+    if (field === 'flowDelay') {
+      state.flow.delay = clamp(num(t.value) || 1.6, 0.4, 8);
+      const d = $('#delayVal'); if (d) d.textContent = state.flow.delay + ' 秒';
+      saveSoon(); return;
+    }
+    const o = currentWheel().options.filter(x => x.id === id)[0];
+    if (!o) return;
+    if (field === 'label') { o.label = t.value; saveSoon(); requestDraw(); }
+    else if (field === 'weight') {
+      o.weight = Math.max(0, num(t.value));
+      if (row) row.classList.toggle('off', o.weight <= 0);
+      saveSoon(); requestDraw();
+    } else if (field === 'color') { o.color = t.value; saveSoon(); requestDraw(); }
+  });
+  sheet.addEventListener('change', e => {
+    const t = e.target;
+    if (t.dataset.flowToggle) {                   // 流程开关
+      state.flow[t.dataset.flowToggle] = t.checked;
+      if (t.dataset.flowToggle === 'enabled' && t.checked && !state.flow.rootId) state.flow.rootId = currentWheel().id;
+      save(); renderSheet(); renderFlowBar(); return;
+    }
+    if (t.dataset.toggle) {                       // 全局开关
+      state.settings[t.dataset.toggle] = t.checked; save(); return;
+    }
+    if (t.dataset.wheelToggle) {                  // 当前转盘开关
+      currentWheel()[t.dataset.wheelToggle] = t.checked;
+      save(); renderSheet(); return;
+    }
+    if (t.id === 'wheelPicker') {                 // 选项页切换转盘
+      state.currentId = t.value; save(); refreshTitle(); requestDraw(); renderSheet(); return;
+    }
+    if (t.dataset.setting === 'historyLimit') {
+      state.settings.historyLimit = num(t.value) || 50;
+      state.history = state.history.slice(0, Math.max(10, state.settings.historyLimit));
+      save(); return;
+    }
+  });
+
+  const fi = $('#fileImport');
+  fi.addEventListener('change', async () => {
+    const f = fi.files && fi.files[0];
+    if (!f) return;
+    try {
+      const text = await f.text();
+      const next = normalize(JSON.parse(text));
+      if (!next.wheels.length) { toast('文件里没有转盘数据'); fi.value = ''; return; }
+      state = next;
+      save(); applyTheme(); refreshTitle(); requestDraw(); renderSheet();
+      toast('导入成功：' + state.wheels.length + ' 个转盘');
+    } catch(e){ toast('导入失败：文件格式不正确'); }
+    fi.value = '';
+  });
+
+  sheet.addEventListener('pointerdown', e => {
+
+    // 转盘列表：按住（触屏长按）拖动排序；右下角按钮和「分支」标记不参与
+    const row = e.target.closest('.wheel-row');
+    if (row && !e.target.closest('.row-acts') && !e.target.closest('.bchip')) {
+      clearRowHold();
+      rowHold = { el:row, x:e.clientX, y:e.clientY, type:e.pointerType || 'mouse',
+                  timer:setTimeout(beginRowDrag, 320) };
+    }
+  });
+
+  document.addEventListener('pointermove', onRowPointerMove, { passive:false });
+  document.addEventListener('pointerup', () => endRowDrag(true));
+  document.addEventListener('pointercancel', () => endRowDrag(false));
+  document.addEventListener('touchmove', e => { if (rowDrag && e.cancelable) e.preventDefault(); }, { passive:false });
+  document.addEventListener('contextmenu', e => { if (rowDrag) e.preventDefault(); });
+
+  // 顶部流程条
+  $('#flowBar').addEventListener('click', e => {
+    const btn = e.target.closest('[data-act]');
+    if (btn) handleAction(btn.dataset.act, null, btn);
+  });
+
+  const ro = new ResizeObserver(() => { fitWheel(); requestDraw(); });
+  ro.observe($('.stage'));
+  window.addEventListener('resize', () => { fitWheel(); requestDraw(); });
+  window.addEventListener('orientationchange', () => setTimeout(() => { fitWheel(); requestDraw(); }, 220));
+}
+
+/* ============================== 单文件转盘数据（「转盘」文件夹） ==============================
+   每个转盘一个数据文件，双击打开网页时自动读取。
+   为什么数据文件是 .js 而不是 .json：file:// 页面被禁止 fetch 本地 json（CORS），
+   而 <script src> 加载本地 js 是允许的，所以数据文件里是「纯 JSON + 一行注册调用」。
+   读不到文件夹就退回页面内置数据，程序照样能用。
+   ==================================================================================== */
+const WHEEL_DIR = '转盘';
+const FILE_INDEX = '_index.js';
+let fileWheelCount = 0;
+let dirHandle = null;        // 已授权写入的「转盘」文件夹
+let dirUsable = false;       // 本次会话能不能直接写文件
+let booting = true;          // 启动阶段不触发自动写回
+function registerWheelFile(def){ (window.__ZW_WHEELS = window.__ZW_WHEELS || []).push(def); }
+function loadWheelFiles(done, bust){
+  window.__ZW_REGISTER = registerWheelFile;
+  window.__ZW_WHEELS = [];
+  const q = bust ? ('?t=' + Date.now()) : '';
+  let finished = false;
+  const finish = () => { if (!finished) { finished = true; done((window.__ZW_WHEELS || []).slice()); } };
+  const idx = document.createElement('script');
+  idx.src = WHEEL_DIR + '/' + FILE_INDEX + q;
+  idx.onerror = () => { finished = true; done([]); };          // 没有文件夹 → 用内置数据
+  idx.onload = () => {
+    const list = window.__ZW_INDEX || [];
+    if (!list.length) { finish(); return; }
+    let left = list.length;
+    const tick = () => { if (--left <= 0) finish(); };
+    list.forEach(f => {
+      const s = document.createElement('script');
+      s.src = WHEEL_DIR + '/' + f + q;
+      s.onload = tick; s.onerror = tick;                       // 单个文件坏了也不卡住
+      document.head.appendChild(s);
+    });
+    setTimeout(finish, 5000);                                  // 兜底
+  };
+  document.head.appendChild(idx);
+}
+function applyWheelFiles(defs){
+  if (!defs || !defs.length) return false;
+  const wheels = defs.filter(d => d && d.name).map(d => {
+    const w = { id:uid(), name:String(d.name), next:'', branch:!!d.branch,
+                grade:(d.grade === true ? true : (d.grade === false ? false : null)),
+                removeAfterPick:!!d.removeAfterPick, options:[] };
+    w._order = (typeof d.order === 'number' && isFinite(d.order)) ? d.order : null;
+    w._nextName = typeof d.next === 'string' ? d.next : '';
+    w.options = (Array.isArray(d.options) ? d.options : []).map(o => {
+      if (typeof o === 'string' || typeof o === 'number') return makeOption(o);
+      const op = makeOption(o.label, o.weight == null ? 1 : o.weight, o.color || null);
+      op._nextName = typeof o.next === 'string' ? o.next : '';
+      return op;
+    });
+    return w;
+  });
+  if (!wheels.length) return false;
+  const byName = {};
+  wheels.forEach(w => { byName[w.name] = w; });
+  const resolve = v => {
+    if (!v) return '';
+    if (v === '结束' || v === 'END' || v === '__end__') return END;
+    if (v === '留在本盘' || v === '__stay__') return STAY;
+    return byName[v] ? byName[v].id : '';
+  };
+  wheels.forEach(w => {
+    w.next = resolve(w._nextName); delete w._nextName;
+    w.options.forEach(o => { o.next = resolve(o._nextName); delete o._nextName; });
+  });
+  // 文件里写了 "order" 就按它排序（方便手改顺序），没写就按文件顺序
+  if (wheels.some(w => w._order != null)) {
+    wheels.forEach((w, i) => { if (w._order == null) w._order = i + 1; });
+    wheels.sort((a, b) => a._order - b._order);
+  }
+  wheels.forEach(w => { delete w._order; });
+  state.wheels = wheels;                                   // 文件为准
+  if (!state.wheels.some(x => x.id === state.currentId)) state.currentId = state.wheels[0].id;
+  if (!state.flow.rootId || !state.wheels.some(x => x.id === state.flow.rootId)) state.flow.rootId = state.wheels[0].id;
+  state.flow.path = []; state.flow.pendingId = '';
+  fileWheelCount = wheels.length;
+  return true;
+}
+/* 当前数据 → 文件文本（格式与数据文件夹里完全一致，可以来回改）
+   idx = 这个转盘在列表里的位置（0 起），会写成显式的 "order" 字段 */
+function wheelFileText(w, idx){
+  const order = (typeof idx === 'number' && idx >= 0) ? (idx + 1) : (state.wheels.indexOf(w) + 1);
+  const L = [];
+  L.push('/* 咒术转盘 · 单转盘数据文件');
+  L.push('   转盘名：' + w.name);
+  L.push('   顺序：第 ' + order + ' 位（order 字段；顺序也可以在网页的「转盘」页拖动调整）');
+  L.push('   改完保存、刷新网页即可生效（浏览器直接读这个文件）');
+  L.push('   next 写「转盘名字」表示下一步去哪个转盘；写 "结束" 表示流程到此为止；不写就留在本盘');
+  L.push('   branch: true 表示这是「分支转盘」：不在默认顺序里，只能被别的转盘的选项分支指到；');
+  L.push('           它抽完若没给该选项设 next，会自动接着「拐进来的那个转盘」的默认下一站继续。');
+  L.push('   weight 是权重（决定扇区大小与概率），留空默认 1；color 可写 "#B23A2F" 固定扇区颜色 */');
+  L.push('window.__ZW_REGISTER({');
+  L.push('  "order": ' + order + ',');
+  L.push('  "name": ' + JSON.stringify(w.name) + ',');
+  const nw = wheelById(w.next);
+  L.push('  "next": ' + (w.next === END ? '"结束"' : (nw ? JSON.stringify(nw.name) : '""')) + ',');
+  if (w.branch) L.push('  "branch": true,');
+  if (w.grade === true) L.push('  "grade": true,');
+  if (w.grade === false) L.push('  "grade": false,');
+  L.push('  "removeAfterPick": ' + (!!w.removeAfterPick) + ',');
+  L.push('  "options": [');
+  w.options.forEach((o, j) => {
+    const no = wheelById(o.next);
+    let line = '    { "label": ' + JSON.stringify(o.label);
+    if (num(o.weight) !== 1) line += ', "weight": ' + num(o.weight);
+    if (o.color) line += ', "color": ' + JSON.stringify(o.color);
+    if (o.next === END) line += ', "next": "结束"';
+    else if (o.next === STAY) line += ', "next": "留在本盘"';
+    else if (no) line += ', "next": ' + JSON.stringify(no.name);
+    line += ' }' + (j < w.options.length - 1 ? ',' : '');
+    L.push(line);
+  });
+  L.push('  ]');
+  L.push('});');
+  L.push('');
+  return L.join('\n');
+}
+function wheelFileName(w, i){
+  return String(i + 1).padStart(2, '0') + '-' + String(w.name).replace(/[\\/:*?"<>|]/g, '_') + '.js';
+}
+function indexFileText(wheels){
+  const head = ['/* 转盘清单 —— 这里的顺序就是网页里「转盘」页的顺序，也是「按列表顺序串联」的顺序。',
+                '   顺序变化时这个文件会跟着重写（文件名前的 01/02… 也是顺序，每个文件里还有 "order" 字段）。',
+                '   新增转盘：照抄一份上面的文件、改名，再把文件名加到下面这个列表里。',
+                '   当前顺序：'];
+  wheels.forEach((w, i) => {
+    head.push('     ' + (i + 1) + '. ' + w.name + (w.branch ? '  [分支转盘·不进默认顺序]' : '') + '  →  ' + wheelFileName(w, i));
+  });
+  head.push('*/');
+  return head.concat(['window.__ZW_INDEX = ['])
+    .concat(wheels.map((w, i) => '  ' + JSON.stringify(wheelFileName(w, i)) + (i < wheels.length - 1 ? ',' : '')))
+    .concat(['];', '']).join('\n');
+}
+function downloadText(name, text){
+  const blob = new Blob([text], { type:'text/javascript' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+/* 记住「转盘」文件夹的授权，下次打开尽量免选（Chrome/Edge） */
+function idbOpen(){
+  return new Promise((res, rej) => {
+    try {
+      const r = indexedDB.open('zswheel-db', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('kv');
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    } catch(e) { rej(e); }
+  });
+}
+async function idbSet(k, v){
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(v, k);
+    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+  });
+}
+async function idbGet(k){
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('kv', 'readonly');
+    const q = tx.objectStore('kv').get(k);
+    q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error);
+  });
+}
+/* 拿到可写目录：interactive=true 时允许弹一次目录选择/授权 */
+async function getDir(interactive){
+  if (!window.showDirectoryPicker) return null;
+  try {
+    if (!dirHandle) { try { dirHandle = (await idbGet('dir')) || null; } catch(e){ dirHandle = null; } }
+    if (dirHandle) {
+      let p = 'denied';
+      try { p = await dirHandle.queryPermission({ mode:'readwrite' }); } catch(e) { p = 'denied'; }
+      if (p === 'granted') return dirHandle;
+      if (!interactive) return null;
+      const r = await dirHandle.requestPermission({ mode:'readwrite' });
+      if (r === 'granted') return dirHandle;
+      dirHandle = null;
+    }
+    if (!interactive) return null;
+    dirHandle = await window.showDirectoryPicker({ mode:'readwrite', id:'zswheel-dir' });
+    try { await idbSet('dir', dirHandle); } catch(e){}
+    return dirHandle;
+  } catch(e) { return null; }
+}
+/* 把当前转盘写回「转盘」文件夹（顺带清掉已删除转盘留下的旧文件） */
+async function syncToFolder(opts){
+  opts = opts || {};
+  const wheels = state.wheels;
+  if (!wheels.length) return false;
+  const dir = await getDir(!!opts.interactive);
+  if (!dir) { if (opts.interactive) toast('没有拿到文件夹写入权限'); return false; }
+  try {
+    const keep = {};
+    for (let i = 0; i < wheels.length; i++) {
+      const name = wheelFileName(wheels[i], i);
+      keep[name] = 1;
+      const fh = await dir.getFileHandle(name, { create:true });
+      const ws = await fh.createWritable();
+      await ws.write(wheelFileText(wheels[i], i));
+      await ws.close();
+    }
+    const fh2 = await dir.getFileHandle(FILE_INDEX, { create:true });
+    const ws2 = await fh2.createWritable();
+    await ws2.write(indexFileText(wheels));
+    await ws2.close();
+    // 清掉已经不存在的转盘文件（只动 01-xx.js 这种命名的）
+    try {
+      for await (const h of dir.values()) {
+        if (h.kind === 'file' && /^\d{2}-.*\.js$/.test(h.name) && !keep[h.name]) await dir.removeEntry(h.name);
+      }
+    } catch(e){}
+    dirUsable = true;
+    ui.lastSync = Date.now();
+    if (opts.toast) toast('已写回 ' + wheels.length + ' 个文件到「' + WHEEL_DIR + '」');
+    return true;
+  } catch(e) {
+    dirUsable = false;
+    if (opts.toast) toast('写回失败：' + ((e && e.message) || e));
+    return false;
+  }
+}
+let syncTimer = null, hintedNoDir = false;
+function scheduleSync(){
+  if (booting || state.settings.autoSave === false) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    syncTimer = null;
+    syncToFolder({}).then(ok => {
+      if (ok) {
+        if (isOverlayOpen() && ui.view === 'manager' && ui.mtab === 'settings') renderSheet('swap');
+      } else if (!hintedNoDir && fileWheelCount && !booting) {
+        hintedNoDir = true;
+        toast('改动已存进浏览器；要同步到「' + WHEEL_DIR + '」数据文件，需要授权一次目录', { action:'授权并写回', fn:() => saveToFolder() });
+      }
+    });
+  }, 900);
+}
+/* 手动「重新读取文件」：会用文件内容覆盖网页上的转盘 */
+async function reloadFromFiles(){
+  const ok = await askDialog({ title:'重新读取数据文件', ok:'读取',
+    desc:'会用「' + WHEEL_DIR + '」文件夹里的内容覆盖网页上的转盘。网页上还没写回文件的改动会丢失，确定吗？' });
+  if (!ok) return;
+  loadWheelFiles(defs => {
+    if (!defs.length) { toast('没读到数据文件'); return; }
+    applyWheelFiles(defs); save();
+    refreshTitle(); requestDraw(); renderSheet();
+    toast('已从文件读取 ' + defs.length + ' 个转盘');
+  }, true);
+}
+function fileStatusShort(){
+  if (!fileWheelCount) return '数据文件：没读到「' + WHEEL_DIR + '」文件夹（当前用网页内置数据）';
+  if (dirUsable) return '数据文件：已同步' + (ui.lastSync ? '（' + fmtTime(ui.lastSync) + ' 写回，含顺序）' : '（含顺序）');
+  return '数据文件：<b>未授权写入</b> —— 顺序等改动目前只存在浏览器里';
+}
+function fileStatusText(){
+  const a = fileWheelCount
+    ? '已读到「' + WHEEL_DIR + '」里的 <b>' + fileWheelCount + '</b> 个数据文件'
+    : '没读到「' + WHEEL_DIR + '」文件夹（当前用网页内置数据）';
+  const b = dirUsable
+    ? '，文件夹<b>已授权写入</b>' + (ui.lastSync ? '（上次写回 ' + fmtTime(ui.lastSync) + '）' : '')
+    : '，文件夹<b>尚未授权</b>：改动先存在浏览器里（刷新不丢），点下面「保存回文件夹」选一次目录即可自动同步';
+  return a + b + '。';
+}
+async function saveToFolder(){
+  const wheels = state.wheels;
+  if (!wheels.length) { toast('还没有转盘'); return; }
+  if (await syncToFolder({ interactive:true, toast:true })) { renderSheet('swap'); return; }
+  if (!window.showDirectoryPicker) {
+    // 老浏览器：退回逐个下载
+    wheels.forEach((w, i) => setTimeout(() => downloadText(wheelFileName(w, i), wheelFileText(w, i)), i * 350));
+    setTimeout(() => downloadText(FILE_INDEX, indexFileText(wheels)), wheels.length * 350 + 200);
+    toast('正在下载 ' + (wheels.length + 1) + ' 个文件（浏览器可能询问是否允许多个下载）');
+  }
+}
+
+/* ============================== 启动 ============================== */
+function boot(){
+  $$('[data-icon]').forEach(el => { el.innerHTML = icon(el.dataset.icon); });
+  refreshTitle();
+  applyTheme();
+  bindEvents();
+  fitWheel();
+  requestDraw();
+  loadGearSfx();                                  // 提前解码齿轮音，第一次打开维度图就能响
+  booting = false;
+  try {
+    if (!localStorage.getItem(HINT_KEY)) {
+      localStorage.setItem(HINT_KEY, '1');
+      setTimeout(() => toast('点转盘开始 · 点结果看操作 · 空格也行'), 700);
+    }
+  } catch(e){}
+}
+function init(){
+  const hadLocal = (() => { try { return !!localStorage.getItem(LS_KEY); } catch(e){ return false; } })();
+  loadWheelFiles(defs => {
+    fileWheelCount = defs.length;
+    /* 关键：默认「浏览器缓存为准」——
+       文件只在「第一次打开」或用户点「从文件重新读取」时生效，
+       否则网页上的增删改会在刷新后被文件覆盖（以前就是这个坑）。 */
+    const useFiles = defs.length && (!hadLocal || state.settings.fromFiles === true);
+    if (useFiles) { applyWheelFiles(defs); save(); }
+    if (defs.length) {
+      getDir(false).then(d => {
+        dirUsable = !!d;
+        if (dirUsable && isOverlayOpen() && ui.mtab === 'settings') renderSheet('swap');
+      });
+    }
+    boot();
+  });
+}
+init();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+*.swp
+*~
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ---- Chrome / Edge 写文件时的临时残留（「保存回文件夹」会留下）----
+*.crswap
+.crswap
+
+# ---- 调试时可能生成的临时文件 ----
+_dev/_last_load.js
+_dev/_probe*.html
+_dev/report.jsonl
+*.log
+
+# ---- 调试截图（项目里不放二进制，需要时自己截图看）----
+screenshot-*.png
+
+# 说明：index.html.bak（模块化之前的备份）**故意保留**——
+# 上次 tabHistory() 被误删就是从这里捞回来的。等确认稳了再删。
