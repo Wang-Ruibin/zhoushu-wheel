@@ -61,8 +61,8 @@ Everything persists in your browser's localStorage, with **one-click JSON backup
 Zero build, zero dependencies: plain HTML + CSS + vanilla JS + Canvas 2D. Clone and start hacking.
 
 ```bash
-git clone git@github.com:Wang-Ruibin/jujutsu-wheel.git
-cd jujutsu-wheel
+git clone git@github.com:Wang-Ruibin/zhoushu-wheel.git
+cd zhoushu-wheel
 # double-click index.html to run locally; for an HTTP origin:
 python -m http.server 8000
 # must be fully green before submitting (297 assertions):

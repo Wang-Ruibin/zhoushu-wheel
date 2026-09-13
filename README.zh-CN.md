@@ -61,8 +61,8 @@
 零构建、零依赖：纯 HTML + CSS + 原生 JS + Canvas 2D，clone 下来就能动手。
 
 ```bash
-git clone git@github.com:Wang-Ruibin/jujutsu-wheel.git
-cd jujutsu-wheel
+git clone git@github.com:Wang-Ruibin/zhoushu-wheel.git
+cd zhoushu-wheel
 # 双击 index.html 即可本地运行；需要 HTTP 源时：
 python -m http.server 8000
 # 提交前必须全绿（297 条断言）：
