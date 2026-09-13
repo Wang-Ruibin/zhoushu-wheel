@@ -80,7 +80,7 @@ Issues and PRs are welcome — if there's a feature you want, just say so.
 
 ## 📜 License & credits
 
-Code is [MIT](LICENSE) — Copyright (c) 2026 Wang-Ruibin. Wheel content and sector proportions are adapted from the 《咒术转盘》 series by Bilibili creator **毓彧庾** ([BV1F1b36VE6K](https://www.bilibili.com/video/BV1F1b36VE6K) etc.), a non-commercial fan work; the dharma-wheel ratchet sound is taken from the first 0–3s of a Bilibili sound-effects clip ([BV1KF3S62EaK](https://www.bilibili.com/video/BV1KF3S62EaK)) and embedded in code. *Jujutsu Kaisen* and all related names are © Gege Akutami / SHUEISHA; this project is unofficial and unaffiliated.
+Code is [MIT](LICENSE) — Copyright (c) 2026 83719561255chyu-byte. Wheel content and sector proportions are adapted from the 《咒术转盘》 series by Bilibili creator **毓彧庾** ([BV1F1b36VE6K](https://www.bilibili.com/video/BV1F1b36VE6K) etc.), a non-commercial fan work; the dharma-wheel ratchet sound is taken from the first 0–3s of a Bilibili sound-effects clip ([BV1KF3S62EaK](https://www.bilibili.com/video/BV1KF3S62EaK)) and embedded in code. *Jujutsu Kaisen* and all related names are © Gege Akutami / SHUEISHA; this project is unofficial and unaffiliated.
 
 ---
 
