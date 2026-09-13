@@ -17,8 +17,12 @@ _dev/_probe*.html
 _dev/report.jsonl
 *.log
 
-# ---- 调试截图（项目里不放二进制，需要时自己截图看）----
+# ---- 调试截图（项目里不放二进制；游戏的维度图导出也会往 转盘/ 存 screenshot-*.png）----
 screenshot-*.png
 
-# 说明：index.html.bak（模块化之前的备份）**故意保留**——
-# 上次 tabHistory() 被误删就是从这里捞回来的。等确认稳了再删。
+# ---- 本地笔记与备份（保留在本地，不进仓库）----
+# index.html.bak 曾在误删 tabHistory() 时救过场，留在本地有保险价值
+index.html.bak
+交接文档.md
+功能手册.md
+排查-维度图失效.md
