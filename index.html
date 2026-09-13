@@ -1009,6 +1009,12 @@ const GROW_ALIAS = [
   ['效率', '咒力效率'], ['评级', '等级评定'], ['高级技巧', '高级技巧会几个'],
   ['颜值', '穿越后的颜值'], ['道德', '道德水平'], ['咒力总量', '咒力总量'], ['天赋', '天赋']
 ];
+/* 成长文字里那个「名字」最长多少字。
+   ⚠️ 超过这个长度就解析不到（会安静地不生效）—— 所以：
+      · 转盘名超过 24 字的，写成长时请用简称（部分匹配也算），或者把转盘名改短
+      · 编辑器里会对过长的写法给出提示，见 growHintFor() */
+const GROW_WORD_MAX = 24;
+
 function growTargetWheel(word){
   const clean = String(word || '').replace(/[\s（(【\[].*$/, '').replace(/[的了之]$/, '').trim();
   if (!clean) return null;
@@ -1021,7 +1027,36 @@ function growTargetWheel(word){
   }
   return w || null;
 }
-/* 解析一次抽屉结果的成长项：[{ wheel, steps }]；「虚度光阴（无属性成长）」返回空 */
+/* 编辑器用：这个成长写法能不能对上转盘？
+   返回 null 表示没问题；否则返回一句提示。 */
+function growHintFor(label){
+  const s = String(label || '');
+  if (!/[＋+]/.test(s)) return null;
+  if (/无属性成长|虚度光阴/.test(s)) return null;          // 明确不成长
+  const words = [];
+  const mAll = s.match(/[（(]([^）)]*)[＋+]/);
+  [mAll ? mAll[1] : null, s].filter(Boolean).forEach(body => {
+    const re = new RegExp('([^＋+\\d（()）]{1,' + GROW_WORD_MAX + '}?)\\s*[＋+]\\s*(\\d+)', 'g');
+    let m;
+    while ((m = re.exec(body))) m[1].split(/[与和、,，]/).forEach(nm => words.push(nm));
+  });
+  if (!words.length) return null;                          // 没解析到词，不以为是成长
+  const bad = words.filter(w => !growTargetWheel(w));
+  if (bad.length) return '看不出「' + bad.join('、') + '」对应哪个转盘 —— 这个成长不会生效（写转盘名或它的一部分）';
+  /* 词太长的情况：整体写法可能已经被正则截断 */
+  if (s.length > GROW_WORD_MAX && !/无属性成长/.test(s)) {
+    const anyByName = words.some(w => growTargetWheel(w));
+    if (!anyByName && s.length > GROW_WORD_MAX) return '写法太长了，成长词最多 ' + GROW_WORD_MAX + ' 字';
+  }
+  return null;
+}
+/* 解析一次抽屉结果的成长项：[{ wheel, steps }]；「虚度光阴（无属性成长）」返回空
+   支持这些写法：
+     体术+1                        简称（走别名表）
+     咒力操纵+1 / 剑术造诣+1        转盘名（或名字的一部分）
+     体质（基础体质）+1             **写全名、带括号**也行（见下面"括号名"那段）
+     我掌握了咒力的核心！（咒操与效率+1）   括号里的补充说明；「与/和/、」隔开的多目标共用 +N
+     我悟了！（阴阳术+1）（剑术+1）         多个括号各算各的 */
 function parseGrowth(label){
   const s = String(label || '');
   if (/无属性成长|虚度光阴/.test(s)) return [];
@@ -1032,17 +1067,38 @@ function parseGrowth(label){
     seen[w.id] = 1;
     out.push({ wheel: w, steps: Math.max(1, Math.min(5, n)) });
   };
-  /* 括号里的补充说明也可能带成长：我掌握了咒力的核心！（咒操与效率+1） */
-  const mAll = s.match(/[（(]([^）)]*)[＋+]/);
-  const bodies = [mAll ? mAll[1] : null, s].filter(Boolean);
-  bodies.forEach(body => {
-    const re = /([^＋+\d（()）]{1,24}?)\s*[＋+]\s*(\d+)/g;
+  const scan = (body, allowParens) => {
+    /* allowParens：允许匹配段里出现括号 —— 用来认「（咒操与效率+1）」这种整段，
+       以及「体质（基础体质）+1」这种名字自带括号的写法 */
+    const cls = allowParens ? '[^＋+\\d）)]' : '[^＋+\\d（()）]';
+    const re = new RegExp('(' + cls + '{1,' + GROW_WORD_MAX + '}?)\\s*[＋+]\\s*(\\d+)', 'g');
     let m;
     while ((m = re.exec(body))) {
       const n = parseInt(m[2], 10) || 1;
       m[1].split(/[与和、,，]/).forEach(nm => push(nm, n));   // 「咒操与效率+1」→ 两个目标共用 +1
     }
-  });
+  };
+  scan(s, false);                       // ① 正常扫一遍（不含括号的写法）
+  /* ② 名字自带括号的情况：「体质（基础体质）+1」
+        上面的扫描会在括号处截断，解析不出「体质（基础体质）」→ 这里补一轮特殊处理。
+        做法：找「（…）」紧跟 +N 的片段，把括号里的内容**并进**它前面的词。
+        ⚠️ 这一步只在"值本身带括号"时才做，避免把「我悟了！（阴阳术+1）」
+           这种"说明文字里带成长"的写法误读成一整个长名字。 */
+  {
+    const re2 = /([^＋+\d（()）]{1,24})\s*[（(]([^）)]*)[）)]\s*[＋+]\s*(\d+)/g;
+    let m2;
+    while ((m2 = re2.exec(s))) {
+      const n = parseInt(m2[3], 10) || 1;
+      if (growTargetWheel(m2[1] + '（' + m2[2] + '）')) push(m2[1] + '（' + m2[2] + '）', n);
+    }
+  }
+  /* ③ 括号里的补充说明也可能带成长：我掌握了咒力的核心！（咒操与效率+1）
+        也可能有多个括号：我悟了！（阴阳术+1）（剑术+1） */
+  {
+    const re3 = new RegExp('[（(]([^）)]{1,80}?)[）)]\\s*(?=[（(]|$)', 'g');
+    let m3;
+    while ((m3 = re3.exec(s))) scan(m3[1], true);
+  }
   return out;
 }
 /* 把标签沿「阶梯」上移 steps 级：等级型走 E-…EX，数字型（3个/不会）按该盘自己的选项排序，顶格即封顶 */
@@ -2158,7 +2214,19 @@ function tabContent(){
       '<button class="mini" data-act="gradeAuto" data-id="' + w.id + '" style="margin-left:6px">恢复自动判断</button></div>' +
     '<div class="hint">权重越大，扇区越大、被抽中的概率越高（例如 <b>五条悟*3</b> 的扇区面积是普通选项的 3 倍）。权重填 <b>0</b> 表示停用该选项，它不会出现在转盘上。</div>' +
     list +
-    '<div class="hint">颜色块可单独改色，点 <b>A</b> 恢复跟随主题。</div>';
+    '<div class="hint">颜色块可单独改色，点 <b>A</b> 恢复跟随主题。</div>' +
+    growHintBlock(w, w.options);   // 这个盘里写着「XX+N」但**对不上任何转盘**的，在这里点出来
+}
+
+/* 成长写法的自查提示：选项里写了「XX+N」但 XX 对不上任何转盘时提醒一下 ——
+   因为那种情况是**安静地不生效**的（不会报错，只是转了也白转）。 */
+function growHintBlock(w, list){
+  const bad = (list || []).map(o => o.label).filter(l => growHintFor(l));
+  if (!bad.length) return '';
+  return '<div class="hint warn">这些选项里的成长<b>对不上转盘</b>，抽到也不会升：<br>' +
+    bad.map(l => '· <b>' + esc(l) + '</b> —— ' + esc(growHintFor(l))).join('<br>') +
+    '<br>写法：<b>转盘名+1</b>，或者转盘名的一部分（如「咒力+1」→ 咒力总量）。' +
+    '转盘名超过 ' + GROW_WORD_MAX + ' 字时请写简称。</div>';
 }
 function viewBatch(){
   const w = currentWheel();

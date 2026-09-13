@@ -1,10 +1,28 @@
-# local backups & scratch notes (kept locally, not part of the app)
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+*.swp
+*~
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ---- Chrome / Edge 写文件时的临时残留（「保存回文件夹」会留下）----
+*.crswap
+.crswap
+
+# ---- 调试时可能生成的临时文件 ----
+_dev/_last_load.js
+_dev/_probe*.html
+_dev/report.jsonl
+*.log
+
+# ---- 调试截图（项目里不放二进制；游戏的维度图导出也会往 转盘/ 存 screenshot-*.png）----
+screenshot-*.png
+
+# ---- 本地笔记与备份（保留在本地，不进仓库）----
+# index.html.bak 曾在误删 tabHistory() 时救过场，留在本地有保险价值
 index.html.bak
-排查-维度图失效.md
 交接文档.md
 功能手册.md
-
-# OS junk
-Thumbs.db
-desktop.ini
-.DS_Store
+排查-维度图失效.md
