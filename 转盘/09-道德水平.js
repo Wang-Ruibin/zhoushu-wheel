@@ -9,7 +9,7 @@
 window.__ZW_REGISTER({
   "order": 9,
   "name": "道德水平",
-  "next": "是否拥有生的术式",
+  "next": "拥有的声望",
   "removeAfterPick": false,
   "options": [
     { "label": "SS（光明磊落）", "weight": 12 },

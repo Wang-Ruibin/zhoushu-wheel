@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>咒术转盘</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -106,6 +107,7 @@ function chartAutoDwellMs(){
 /* ============================== 数据 ============================== */
 const LS_KEY = 'zhoushu-wheel.v1';
 const HINT_KEY = 'zhoushu-wheel.hint';
+const RECOVERY_KEY = 'zhoushu-wheel.import-recovery.v1';
 const BASE_ALL = 0.0001;
 const BASE_SETTINGS = {
   palette:'xuan', theme:'light', sound:true, vibrate:true,
@@ -143,6 +145,16 @@ const BASE_WHEELS = [
 ];
 /* v3 新增的内置转盘（老存档升级时按名字补进来） */
 const V3_PRESETS = ['穿越后的地点', '穿越后的年龄', '穿越后的性别', '穿越后的颜值', '道德水平'];
+const WHEEL_CATEGORIES = ['角色', '属性', '能力', '事件', '结局', '自定义'];
+function inferWheelCategory(name){
+  const s = String(name || '');
+  if (/事件|成长/.test(s)) return '事件';
+  if (/结局|等级评定/.test(s)) return '结局';
+  if (/咒力|体术|体质|天赋|道德|声望|颜值/.test(s)) return '属性';
+  if (/术式|技巧|金手指|身份/.test(s)) return '能力';
+  if (/穿越|地点|性别|时间/.test(s)) return '角色';
+  return '自定义';
+}
 
 function makeOption(label, weight, color, next){
   return { id:uid(), label:String(label == null ? '' : label), weight: weight == null ? 1 : num(weight),
@@ -158,13 +170,13 @@ function normOption(o){
            next:(o && typeof o.next === 'string') ? o.next : '' };
 }
 function makeWheel(name, labels){
-  return { id:uid(), name:name, next:'', branch:false, grade:null, removeAfterPick:false,
+  return { id:uid(), name:name, category:'自定义', next:'', branch:false, grade:null, removeAfterPick:false,
            multi:false, faceBy:'', faces:[], options:(labels || []).map(l => makeOption(l)) };
 }
 /* 内置转盘定义 → 运行时转盘（支持带权重的 opts） */
 function wheelFromDef(def){
   return {
-    id:uid(), name:def.name, next:'', branch:!!def.branch, grade:(def.grade === true ? true : (def.grade === false ? false : null)),
+    id:uid(), name:def.name, category:def.category || inferWheelCategory(def.name), next:'', branch:!!def.branch, grade:(def.grade === true ? true : (def.grade === false ? false : null)),
     removeAfterPick:false, multi:false, faceBy:'', faces:[],
     options: def.opts ? def.opts.map(p => makeOption(p[0], p[1])) : (def.labels || []).map(l => makeOption(l))
   };
@@ -236,6 +248,7 @@ function normalize(d){
   s.wheels = ws.filter(w => w && typeof w === 'object').map(w => ({
     id: w.id || uid(),
     name: String(w.name == null ? '未命名转盘' : w.name),
+    category: WHEEL_CATEGORIES.indexOf(w.category) >= 0 ? w.category : inferWheelCategory(w.name),
     removeAfterPick: !!w.removeAfterPick,
     next: (w.next && typeof w.next === 'string') ? w.next : '',
     branch: !!w.branch,
@@ -263,7 +276,7 @@ function normalize(d){
   s.settings.chartDwell = chartDwellSec(s.settings.chartDwell);
   if (!s.settings.chartColor) s.settings.chartColor = 'zhu';
   if (!s.settings.wheelColor) s.settings.wheelColor = 'jin';
-  if (!(num(s.wheelAlpha) > 0)) s.wheelAlpha = 0.40;
+  s.settings.wheelAlpha = clamp(num(s.settings.wheelAlpha) || 0.40, 0.05, 1);
   if (!s.settings.spinFx) s.settings.spinFx = 'bounce';
   /* 老存档里的效果名迁移：摇摆 → 2D滚筒，甩出（已移除）→ 颠簸 */
   if (s.settings.spinFx === 'sway') s.settings.spinFx = 'drum2d';
@@ -306,11 +319,35 @@ function load(){
   if (!s.wheels.some(w => w.id === s.currentId)) s.currentId = s.wheels[0].id;
   return s;
 }
-function save(){ try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){} scheduleSync(); }
+const storageStatus = { ok:true, at:0, error:'' };
+let storageErrorShown = false;
+function save(){
+  let ok = true;
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    storageStatus.ok = true;
+    storageStatus.at = Date.now();
+    storageStatus.error = '';
+    storageErrorShown = false;
+  } catch(e) {
+    ok = false;
+    storageStatus.ok = false;
+    storageStatus.error = (e && e.message) || '浏览器拒绝写入';
+    if (!storageErrorShown) {
+      storageErrorShown = true;
+      setTimeout(() => toast('保存失败：改动目前只在本次会话中，请立即导出备份'), 0);
+    }
+  }
+  scheduleSync();
+  return ok;
+}
 let saveTimer = null;
 function saveSoon(){ clearTimeout(saveTimer); saveTimer = setTimeout(save, 200); }
 
 let state = load();
+let importRecoveryRaw = (() => {
+  try { return localStorage.getItem(RECOVERY_KEY) || ''; } catch(e) { return ''; }
+})();
 /* js/util.js 的 colorOf 需要知道当前调色板；它不认识 state，所以从这里注入 */
 usePalette(() => state && state.settings ? state.settings.palette : 'xuan');
 /* 声音模块同理：音效 / 震动开关也从这里喂进去 */
@@ -1732,6 +1769,13 @@ function flowModeText(){
   if (f.autoSpin) return { t:'当前：一路自动连转 —— 跳过去之后会立刻自动旋转', off:false };
   return { t:'当前：只跳不转 —— 跳过去后停下，等你点「点击旋转」', off:false };
 }
+function storageStatusText(){
+  if (!storageStatus.ok) {
+    return '<b>仅本次会话</b>：浏览器存储写入失败（' + esc(storageStatus.error || '未知原因') +
+      '）。请立即使用“导出备份”。';
+  }
+  return '浏览器存储：<b>已保存</b>' + (storageStatus.at ? '（' + fmtTime(storageStatus.at) + '）' : '') + '。';
+}
 function tabSettings(){
   const s = state.settings, f = state.flow;
   const mode = flowModeText();
@@ -1811,10 +1855,11 @@ function tabSettings(){
     '<div class="sec-title">数据</div><div class="tools">' +
     '<button class="mini" data-act="exportData">' + icon('download') + ' 导出备份</button>' +
     '<button class="mini" data-act="importData">' + icon('upload') + ' 导入备份</button>' +
+    (importRecoveryRaw ? '<button class="mini" data-act="restoreImport">撤销上次导入</button>' : '') +
     '<button class="mini" data-act="copyData">' + icon('copy') + ' 复制数据</button>' +
     '<button class="mini danger" data-act="resetAll">' + icon('refresh') + ' 恢复默认</button>' +
     '</div>' +
-    '<div class="hint">所有内容只保存在本机浏览器（localStorage），不会上传到任何服务器。换设备时用「导出备份」把数据带走。</div>' +
+    '<div class="hint">' + storageStatusText() + ' 所有内容只保存在本机浏览器，不会上传到任何服务器。换设备时用「导出备份」把数据带走。</div>' +
     '<div class="hint">咒术转盘 · 纸张版 v3.0 · 共 ' + state.wheels.length + ' 个转盘 / ' +
     state.wheels.reduce((a, w) => a + w.options.length, 0) + ' 个选项</div>';
 }
@@ -2402,6 +2447,94 @@ function exportData(){
     toast('已导出备份文件');
   } catch(e){ toast('导出失败'); }
 }
+function stateOptionCount(s){
+  return (s.wheels || []).reduce((total, wheel) => {
+    const faceTotal = (wheel.faces || []).reduce((n, facet) => n + ((facet.options || []).length), 0);
+    return total + (wheel.options || []).length + faceTotal;
+  }, 0);
+}
+function importSummary(raw, next){
+  const version = Math.max(1, num(raw && raw.version) || 1);
+  const warnings = [];
+  if (version > STATE_VER) warnings.push('备份来自更高版本，未知字段可能无法保留');
+  if (!(raw && Array.isArray(raw.history))) warnings.push('备份没有历史记录');
+  if (next.wheels.some(w => !wheelOptions(w).some(o => num(o.weight) > 0))) warnings.push('包含没有可抽选项的转盘');
+  return {
+    version,
+    wheels:next.wheels.length,
+    options:stateOptionCount(next),
+    history:next.history.length,
+    warnings
+  };
+}
+function importSummaryText(summary){
+  const lines = [
+    '备份版本：v' + summary.version,
+    '内容：' + summary.wheels + ' 个转盘、' + summary.options + ' 个选项、' + summary.history + ' 条历史',
+    '导入前会自动保留当前数据，可在设置里“撤销上次导入”。'
+  ];
+  if (summary.warnings.length) lines.push('注意：' + summary.warnings.join('；'));
+  return lines.join('\n');
+}
+function markStorageFailure(error){
+  storageStatus.ok = false;
+  storageStatus.error = (error && error.message) || '浏览器拒绝写入';
+}
+function replaceStateWithRecovery(next, beforeRaw){
+  const nextRaw = JSON.stringify(next);
+  try {
+    localStorage.setItem(RECOVERY_KEY, beforeRaw);
+    localStorage.setItem(LS_KEY, nextRaw);
+  } catch(e) {
+    try { localStorage.setItem(LS_KEY, beforeRaw); } catch(ignore){}
+    markStorageFailure(e);
+    return false;
+  }
+  importRecoveryRaw = beforeRaw;
+  state = next;
+  storageStatus.ok = true;
+  storageStatus.at = Date.now();
+  storageStatus.error = '';
+  storageErrorShown = false;
+  scheduleSync();
+  return true;
+}
+async function importDataText(text, confirmImport){
+  let raw, next;
+  try {
+    raw = JSON.parse(text);
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('根内容不是对象');
+    next = normalize(raw);
+  } catch(e) {
+    return { ok:false, error:'文件格式不正确' };
+  }
+  if (!next.wheels.length) return { ok:false, error:'文件里没有转盘数据' };
+  const summary = importSummary(raw, next);
+  const confirmed = confirmImport
+    ? await confirmImport(summary)
+    : await askDialog({ title:'确认导入备份', desc:importSummaryText(summary), ok:'导入' });
+  if (!confirmed) return { ok:false, cancelled:true, summary };
+  const beforeRaw = JSON.stringify(state);
+  if (!replaceStateWithRecovery(next, beforeRaw)) {
+    return { ok:false, error:'无法创建恢复点，当前数据没有改变', summary };
+  }
+  applyTheme(); refreshTitle(); requestDraw(); renderSheet();
+  return { ok:true, summary };
+}
+async function restoreImportState(confirmRestore){
+  if (!importRecoveryRaw) return false;
+  let previous;
+  try { previous = normalize(JSON.parse(importRecoveryRaw)); } catch(e) { return false; }
+  if (!previous.wheels.length) return false;
+  const confirmed = confirmRestore
+    ? await confirmRestore(previous)
+    : await askDialog({ title:'撤销上次导入', desc:'恢复导入前的 ' + previous.wheels.length + ' 个转盘；当前数据会成为新的恢复点。', ok:'恢复' });
+  if (!confirmed) return false;
+  const currentRaw = JSON.stringify(state);
+  if (!replaceStateWithRecovery(previous, currentRaw)) return false;
+  applyTheme(); refreshTitle(); requestDraw(); renderSheet();
+  return true;
+}
 function dropLayerIf(view){ const t = topNav(); if (t && t.view === view) NAV.stack.pop(); }
 async function handleAction(act, id, el){
   const w = currentWheel();
@@ -2579,6 +2712,10 @@ async function handleAction(act, id, el){
     case 'saveFolder': saveToFolder(); break;
     case 'reloadFiles': reloadFromFiles(); break;
     case 'importData': $('#fileImport').click(); break;
+    case 'restoreImport':
+      if (await restoreImportState()) toast('已恢复导入前的数据');
+      else if (!storageStatus.ok) toast('恢复失败：浏览器存储不可用');
+      break;
     case 'copyData': copyText(JSON.stringify(state)); break;
     case 'resetAll': {
       const ok = await askDialog({ title:'恢复默认', desc:'将清除全部转盘、选项与历史记录，恢复为初始内容', ok:'恢复', danger:true });
@@ -3055,12 +3192,10 @@ function bindEvents(){
     if (!f) return;
     try {
       const text = await f.text();
-      const next = normalize(JSON.parse(text));
-      if (!next.wheels.length) { toast('文件里没有转盘数据'); fi.value = ''; return; }
-      state = next;
-      save(); applyTheme(); refreshTitle(); requestDraw(); renderSheet();
-      toast('导入成功：' + state.wheels.length + ' 个转盘');
-    } catch(e){ toast('导入失败：文件格式不正确'); }
+      const result = await importDataText(text);
+      if (result.ok) toast('导入成功：' + state.wheels.length + ' 个转盘（可撤销）');
+      else if (!result.cancelled) toast('导入失败：' + (result.error || '文件格式不正确'));
+    } catch(e){ toast('导入失败：无法读取文件'); }
     fi.value = '';
   });
 
@@ -3145,7 +3280,7 @@ function faceToFile(f){
 function applyWheelFiles(defs){
   if (!defs || !defs.length) return false;
   const wheels = defs.filter(d => d && d.name).map(d => {
-    const w = { id:uid(), name:String(d.name), next:'', branch:!!d.branch,
+    const w = { id:uid(), name:String(d.name), category:WHEEL_CATEGORIES.indexOf(d.category) >= 0 ? d.category : inferWheelCategory(d.name), next:'', branch:!!d.branch,
                 grade:(d.grade === true ? true : (d.grade === false ? false : null)),
                 removeAfterPick:!!d.removeAfterPick, options:[] };
     w._order = (typeof d.order === 'number' && isFinite(d.order)) ? d.order : null;
@@ -3238,6 +3373,7 @@ function wheelFileText(w, idx){
   L.push('window.__ZW_REGISTER({');
   L.push('  "order": ' + order + ',');
   L.push('  "name": ' + JSON.stringify(w.name) + ',');
+  L.push('  "category": ' + JSON.stringify(w.category || inferWheelCategory(w.name)) + ',');
   const nw = wheelById(w.next);
   L.push('  "next": ' + (w.next === END ? '"结束"' : (nw ? JSON.stringify(nw.name) : '""')) + ',');
   if (w.branch) L.push('  "branch": true,');
@@ -3365,11 +3501,13 @@ async function syncToFolder(opts){
       }
     } catch(e){}
     dirUsable = true;
+    ui.fileError = '';
     ui.lastSync = Date.now();
     if (opts.toast) toast('已写回 ' + wheels.length + ' 个文件到「' + WHEEL_DIR + '」');
     return true;
   } catch(e) {
     dirUsable = false;
+    ui.fileError = (e && e.message) || String(e || '未知错误');
     if (opts.toast) toast('写回失败：' + ((e && e.message) || e));
     return false;
   }
@@ -3404,6 +3542,7 @@ async function reloadFromFiles(){
 }
 function fileStatusShort(){
   if (!fileWheelCount) return '数据文件：没读到「' + WHEEL_DIR + '」文件夹（当前用网页内置数据）';
+  if (ui.fileError) return '数据文件：<b>写回失败</b> —— ' + esc(ui.fileError);
   if (dirUsable) return '数据文件：已同步' + (ui.lastSync ? '（' + fmtTime(ui.lastSync) + ' 写回，含顺序）' : '（含顺序）');
   return '数据文件：<b>未授权写入</b> —— 顺序等改动目前只存在浏览器里';
 }
@@ -3411,7 +3550,9 @@ function fileStatusText(){
   const a = fileWheelCount
     ? '已读到「' + WHEEL_DIR + '」里的 <b>' + fileWheelCount + '</b> 个数据文件'
     : '没读到「' + WHEEL_DIR + '」文件夹（当前用网页内置数据）';
-  const b = dirUsable
+  const b = ui.fileError
+    ? '，<b>文件写回失败</b>：' + esc(ui.fileError) + '；浏览器内的数据仍然保留'
+    : dirUsable
     ? '，文件夹<b>已授权写入</b>' + (ui.lastSync ? '（上次写回 ' + fmtTime(ui.lastSync) + '）' : '')
     : '，文件夹<b>尚未授权</b>：改动先存在浏览器里（刷新不丢），点下面「保存回文件夹」选一次目录即可自动同步';
   return a + b + '。';

@@ -34,7 +34,7 @@
 | --- | --- |
 | 🌐 **在线玩**（最快） | 打开 <https://gxnatri.top/> |
 | 💻 **电脑本地** | 点右上角 **Code → Download ZIP** 解压（或 `git clone`），双击 `index.html` |
-| 📱 **手机** | 把 `index.html` 发到手机用浏览器打开；浏览器菜单选「添加到主屏幕」即变全屏小应用 |
+| 📱 **手机** | 直接打开在线版；若要完全离线使用，请把整个解压目录放进支持本地网页的文件管理器/浏览器中，不能只发送 `index.html` |
 
 ## 🎮 怎么玩
 
@@ -65,7 +65,7 @@ git clone git@github.com:Wang-Ruibin/zhoushu-wheel.git
 cd zhoushu-wheel
 # 双击 index.html 即可本地运行；需要 HTTP 源时：
 python -m http.server 8000
-# 提交前必须全绿（297 条断言）：
+# 提交前必须让完整回归套件全绿：
 node _dev/run.js
 # 单跑一个测试：
 node _dev/t13_multi.js

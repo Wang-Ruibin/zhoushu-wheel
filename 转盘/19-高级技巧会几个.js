@@ -12,11 +12,11 @@ window.__ZW_REGISTER({
   "next": "是否有特殊天赋",
   "removeAfterPick": false,
   "options": [
-    { "label": "3个", "weight": 3 },
-    { "label": "2个", "weight": 4 },
-    { "label": "4个", "weight": 2 },
-    { "label": "1个", "weight": 6 },
+    { "label": "3个", "weight": 3, "next": "会哪些高级技巧" },
+    { "label": "2个", "weight": 4, "next": "会哪些高级技巧" },
+    { "label": "4个", "weight": 2, "next": "会哪些高级技巧" },
+    { "label": "1个", "weight": 6, "next": "会哪些高级技巧" },
     { "label": "不会", "weight": 2 },
-    { "label": "5个" }
+    { "label": "5个", "next": "会哪些高级技巧" }
   ]
 });
