@@ -24,5 +24,4 @@ screenshot-*.png
 # index.html.bak 曾在误删 tabHistory() 时救过场，留在本地有保险价值
 index.html.bak
 交接文档.md
-功能手册.md
 排查-维度图失效.md
