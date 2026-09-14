@@ -327,7 +327,13 @@ function loadApp(opts){
     navigator: { vibrate(){}, clipboard:{ writeText: async () => {} }, userAgent:'node' },
     localStorage: {
       getItem: k => (store.has(k) ? store.get(k) : null),
-      setItem: (k, v) => store.set(k, String(v)),
+      setItem: (k, v) => {
+        if (opts.storageSetError) {
+          const err = typeof opts.storageSetError === 'function' ? opts.storageSetError(k, v) : opts.storageSetError;
+          if (err) throw (err instanceof Error ? err : new Error(String(err)));
+        }
+        store.set(k, String(v));
+      },
       removeItem: k => store.delete(k)
     },
     location: { href:'file:///index.html', reload(){} },
@@ -381,6 +387,7 @@ function loadApp(opts){
     'saveRoundChart, resetFlow, renderFlowBar, draw, layoutSectors, applyGrowth, grownLabel, currentWheel, save, load, ' +
     'normalize, dimsUpTo, createChartSnapshot, prevChartOf, moveChart, moveWheel, applyWheelFiles, wheelFileText, ' +
     'indexFileText, wheelFileName, attrCountUpTo, scheduleSync, toast, askDialog, loopDetected, nextInOrderAfter, ' +
+    'storageStatus, storageStatusText, importSummary, importSummaryText, importDataText, restoreImportState, stateOptionCount, ' +
     'boot, chartColors, gradeValue: (l) => parseGrade(l), continueFlow, chartMidAt, hideToast, ' +
     'chartDwellSec, drawRadar, startChartAnim, drawDharmaWheel, dharmaWheelCanvas, paletteOf, paletteKeyNow, ' +
     'fileWheelCountGet: () => fileWheelCount, dirUsableGet: () => dirUsable, bootingGet: () => booting, ' +

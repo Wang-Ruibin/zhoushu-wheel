@@ -20,7 +20,7 @@ window.__ZW_REGISTER({
     { "label": "A（一级）", "weight": 11 },
     { "label": "S（特级）", "weight": 12 },
     { "label": "SS（宿傩）", "weight": 10 },
-    { "label": "SS（比肩六眼）", "weight": 8 },
+    { "label": "SSS（比肩六眼）", "weight": 8 },
     { "label": "EX（效率远超六眼）", "weight": 4 }
   ]
 });

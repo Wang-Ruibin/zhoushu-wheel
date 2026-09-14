@@ -34,7 +34,7 @@
 | --- | --- |
 | 🌐 **Play online** (fastest) | Open <https://gxnatri.top/> |
 | 💻 **Desktop** | **Code → Download ZIP** (or `git clone`), unzip, double-click `index.html` |
-| 📱 **Phone** | Send `index.html` to your phone and open it in a browser; "Add to Home Screen" turns it into a fullscreen mini-app |
+| 📱 **Phone** | Open the hosted version directly. For fully offline use, copy the entire extracted folder into a file manager/browser that can open local web apps—`index.html` alone is not enough |
 
 ## 🎮 How it plays
 
@@ -65,7 +65,7 @@ git clone git@github.com:Wang-Ruibin/zhoushu-wheel.git
 cd zhoushu-wheel
 # double-click index.html to run locally; for an HTTP origin:
 python -m http.server 8000
-# must be fully green before submitting (297 assertions):
+# the full regression suite must pass before submitting:
 node _dev/run.js
 # run a single test:
 node _dev/t13_multi.js

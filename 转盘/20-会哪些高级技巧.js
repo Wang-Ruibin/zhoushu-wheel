@@ -13,9 +13,14 @@ window.__ZW_REGISTER({
   "branch": true,
   "removeAfterPick": false,
   "options": [
-    { "label": "选项 1" },
-    { "label": "选项 2" },
-    { "label": "选项 3" },
-    { "label": "选项 4" }
+    { "label": "反转术式", "weight": 5 },
+    { "label": "领域展开", "weight": 3 },
+    { "label": "简易领域", "weight": 6 },
+    { "label": "领域展延", "weight": 3 },
+    { "label": "落花之情", "weight": 3 },
+    { "label": "黑闪", "weight": 7 },
+    { "label": "结界术", "weight": 6 },
+    { "label": "束缚运用", "weight": 6 },
+    { "label": "咒具精通", "weight": 5 }
   ]
 });
