@@ -29,7 +29,8 @@ const KNOWN_LOCAL = new Set([
   'spinning', // 页面里只出现在 rows[i].getBoundingClientRect() 这类属性访问之后
   'dur',      // 页面里是 animateSpin 的参数名
   'frame',    // 模块里是递归函数名
-  'm', 're', 'id', 'at', 'in', 'set', 'list', 'key', 'top', 'left', 'self', 'name', 'value', 'text', 'src'
+  'm', 're', 'id', 'at', 'in', 'set', 'list', 'key', 'top', 'left', 'self', 'name', 'value', 'text', 'src',
+  'g'        // 绘制代码里的局部渐变变量 g，与模块属性 .g 同名（人工确认过）
 ]);
 
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');

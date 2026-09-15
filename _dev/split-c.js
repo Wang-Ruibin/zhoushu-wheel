@@ -146,7 +146,53 @@ const ROUNDS = {
         'function storageErrorReset(){ storageErrorShown = false; }'
       ].join('\n'),
       extraExports: ['loadState', 'storageErrorReset'] }
-  ]
+  ],
+  2: [
+    { file: 'growth', order: 0,
+      title: '属性成长：等级解析、成长规则与属性汇总',
+      names: ['GRADES','parseGrade','isGradeWheel','GRADE_LADDER','GROW_ALIAS','GROW_WORD_MAX','growTargetWheel',
+              'growHintFor','parseGrowth','growLabel','grownLabel','lastLabelOf','applyGrowth','attrCountUpTo','dimsUpTo'],
+      /* toast 在 navigation（本轮 order 1）里，比本模块晚 → ZW.x 运行时访问 */
+      lateBind: { toast:'ZW.toast' } },
+    { file: 'navigation', order: 1,
+      title: '导航与界面外壳：面板栈、返回键、toast、对话框、标题与主题',
+      names: ['ui','NAV','toastTimer','toast','hideToast','askDialog','scrollMemo','isOverlayOpen','topNav','navDepth',
+              'navHist','showOverlay','hideOverlay','navPush','navTo','navBack','navCloseAll','navGoBack','openSheet',
+              'closeSheet','renderSheet','refreshTitle','applyTheme'],
+      /* 视图函数在 views.js（R4）才拆出；canvas 元素仍在主脚本 → 一律 ZW.x 运行时访问 */
+      lateBind: {
+        viewManager:'ZW.viewManager', viewBatch:'ZW.viewBatch', viewTarget:'ZW.viewTarget', viewChart:'ZW.viewChart',
+        viewNewPick:'ZW.viewNewPick', viewTemplates:'ZW.viewTemplates', viewNewChart:'ZW.viewNewChart',
+        viewFaces:'ZW.viewFaces', viewFaceWhen:'ZW.viewFaceWhen', viewResult:'ZW.viewResult',
+        viewComplete:'ZW.viewComplete', viewFlowAudit:'ZW.viewFlowAudit', viewSimulation:'ZW.viewSimulation',
+        startChartAnim:'ZW.startChartAnim', afterChartDismiss:'ZW.afterChartDismiss', canvas:'ZW.canvas'
+      },
+      exactReplace: [
+        ['if (chartAutoTimer) { clearTimeout(chartAutoTimer); chartAutoTimer = null; }', 'ZW.chartAutoCancel();']
+      ] },
+    { file: 'chart', order: 2,
+      title: '维度图：数据汇总、法轮底纹、雷达绘制与自动弹窗节奏',
+      names: ['chartAutoDwellMs','CHART_SHOW_DELAY','CHART_RESUME_GAP','chartAutoTimer','chartFlowDone',
+              'afterChartDismiss','showChartThen','chartAfter','chartMidAt','showChartForEnd','chartDims','chartSummary',
+              'saveRoundChart','createChartSnapshot','prevChartOf','CHART_INKS','chartInkKey','chartInk','WHEEL_INKS',
+              'wheelInkKey','wheelInk','shadeHex','brassBall','DHARMA_SPOKES','dharmaCache','dharmaWheelCanvas',
+              'drawDharmaWheel','GEAR_TURN_AT','gearMotion','gearAngle','chartColors','CHART_MAX','GRADE_BASE',
+              'chartRadiusRatio','drawRadar','chartRaf','startChartAnim','chartLiveDims','chartSlots','chartSlotIndex',
+              'moveChart','chartPositionText'],
+      /* flow.js（R3）的函数在这里还是主脚本/晚加载 → ZW.x 运行时访问 */
+      lateBind: { continueFlow:'ZW.continueFlow', flowJump:'ZW.flowJump', resetFlow:'ZW.resetFlow', renderFlowBar:'ZW.renderFlowBar' },
+      prelude: [
+        '/* chartAutoTimer / chartFlowDone 是本模块私有；外部（导航返回、调试出口）经这两个助手触碰 */',
+        'function chartAutoCancel(){ if (chartAutoTimer) { clearTimeout(chartAutoTimer); chartAutoTimer = null; } }',
+        'function chartManualOpen(){ chartAutoCancel(); chartFlowDone = null; }'
+      ].join('\n'),
+      extraExports: ['chartAutoCancel', 'chartManualOpen'] }
+  ],
+  /* 主脚本侧逐轮精确替换（搬运后主脚本里残留的跨域引用） */
+  MAIN_REPLACE: { 2: [
+    ['clearTimeout(chartAutoTimer); chartAutoTimer = null;', 'chartManualOpen();'],
+    ['chartFlowDone = null;', '']
+  ] }
 };
 /* 已存在的 ZW 符号（插件 + 之前轮次模块导出），按轮次累积 */
 function pluginSymbols(){
@@ -252,7 +298,7 @@ sortedMods.forEach(mod => {
   /* 计算解构导入：体里的裸标识符 ∩ 当前可见符号 − 本模块自有 − 内建 */
   const locals = new Set();
   segs.forEach(d => d.names.forEach(n => locals.add(n)));
-  mod.extraExports.forEach(n => locals.add(n));
+  (mod.extraExports || []).forEach(n => locals.add(n));
   const ids = bareIds(body);
   const imports = [];
   ids.forEach(id => {
@@ -268,14 +314,14 @@ sortedMods.forEach(mod => {
     (imports.length ? 'const { ' + imports.join(', ') + ' } = ZW;\n' : '');
   const exportsList = [];
   segs.forEach(d => d.names.forEach(n => { if (!exportsList.includes(n)) exportsList.push(n); }));
-  mod.extraExports.forEach(n => { if (!exportsList.includes(n)) exportsList.push(n); });
+  (mod.extraExports || []).forEach(n => { if (!exportsList.includes(n)) exportsList.push(n); });
   const foot = '\nObject.assign(ZW, { ' + exportsList.join(', ') + ' });\n})();\n';
   const pre = mod.prelude ? mod.prelude + '\n\n' : '';
   const out = head + '\n' + pre + body + '\n' + foot;
   fs.writeFileSync(path.join(ROOT, 'js', mod.file + '.js'), out, 'utf8');
   console.log('生成 js/' + mod.file + '.js：' + segs.length + ' 个声明，' + out.length + ' 字符，imports: ' + (imports.join(', ') || '(无)'));
   segs.forEach(d => d.names.forEach(n => available.add(n)));
-  mod.extraExports.forEach(n => available.add(n));
+  (mod.extraExports || []).forEach(n => available.add(n));
 });
 
 /* 主脚本可转发的 ZW 符号全集 */
@@ -295,6 +341,10 @@ let mainCode = mainLines.join('\n');
 mainCode = mainCode.split('state = seed();').join('loadState(seed());');
 mainCode = mainCode.split('state = next;').join('loadState(next);');
 mainCode = mainCode.split('storageErrorShown = false;').join('storageErrorReset();');
+((ROUNDS.MAIN_REPLACE || {})[roundNo] || []).forEach(([from, to]) => {
+  if (mainCode.indexOf(from) < 0) throw new Error('主脚本精确替换源不存在 → ' + from);
+  mainCode = mainCode.split(from).join(to);
+});
 /* 主脚本仍持有的顶层名字（含函数与变量）——它们不能再进转发清单（会重复声明） */
 const mainDecls = new Set();
 parseDecls(mainCode).forEach(d => d.names.forEach(n => mainDecls.add(n)));
@@ -315,8 +365,8 @@ const grouped = merged.join(',\n        ');
 /* ⚠️ 用函数替换：替换串里的 $$ / $& 会被 String.replace 当特殊模式 */
 mainCode = mainCode.replace(fwdMatch[0], () => 'const { ' + grouped + ' } = ZW;');
 /* 2) 主脚本函数发布到 ZW（供先加载的模块运行时反查）；
-      ui 这类「晚绑定模块要用、但还没搬走的共享对象」也要发布（仍在主脚本时才发） */
-const VAR_PUBLISH = ['ui'];
+      ui/canvas 这类「晚绑定模块要用、但还没搬走的共享对象」也要发布（仍在主脚本时才发） */
+const VAR_PUBLISH = ['ui', 'canvas'];
 const publish = Array.from(mainFns).concat(VAR_PUBLISH.filter(n => mainDecls.has(n))).sort();
 const pubBlock = '\n/* 主脚本仍持有的函数也挂到 ZW：先加载的模块（state/flow/storage…）运行时要反查 */\nObject.assign(ZW, { ' + publish.join(', ') + ' });\n';
 if (mainCode.indexOf('主脚本仍持有的函数也挂到 ZW') >= 0) {
@@ -326,19 +376,23 @@ if (mainCode.indexOf('主脚本仍持有的函数也挂到 ZW') >= 0) {
 }
 parts.inline = mainCode;
 
-/* ---------- script 标签插入（在 js/multi.js 之后按本轮顺序） ---------- */
+/* ---------- script 标签插入（新模块一律插在主 <script> 之前，保证轮次顺序） ---------- */
 let doc = parts.before + parts.inline + parts.after;
 const newTags = MODULE_ORDER_TAG[roundNo].map(f => '<script src="' + f + '"></script>').join('\n');
 if (doc.indexOf(newTags) < 0) {
-  doc = doc.replace('<script src="js/multi.js"></script>', '<script src="js/multi.js"></script>\n' + newTags);
+  const anchor = '\n<script>\n(function(){';
+  if (doc.indexOf(anchor) < 0) throw new Error('找不到主 <script> 开标签锚点');
+  doc = doc.replace(anchor, '\n' + newTags + anchor);
 }
 
-/* ---------- sw.js CORE 清单同步 ---------- */
+/* ---------- sw.js CORE 清单同步（追加到最后一个 js 条目之后） ---------- */
 const swPath = path.join(ROOT, 'sw.js');
 let sw = fs.readFileSync(swPath, 'utf8');
 const newPaths = MODULE_ORDER_TAG[roundNo].map(f => "'./" + f + "', ").join('').replace(/, $/, '');
 if (!sw.includes("'" + MODULE_ORDER_TAG[roundNo][0] + "'")) {
-  sw = sw.replace("'./js/multi.js',", "'./js/multi.js', " + newPaths);
+  const lastJs = (sw.match(/'\.\/js\/[\w.-]+\.js',/g) || []).pop();
+  if (!lastJs) throw new Error('sw.js 里没找到 js 条目');
+  sw = sw.replace(lastJs, lastJs + ' ' + newPaths);
 }
 fs.writeFileSync(swPath, sw, 'utf8');
 
