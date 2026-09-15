@@ -3,7 +3,7 @@
 const CACHE = 'zhoushu-wheel-v4';
 const CORE = [
   './', './index.html', './app.css', './favicon.svg', './manifest.webmanifest',
-  './js/_ns.js', './js/random.js', './js/util.js', './js/core.js', './js/icons.js', './js/sound.js', './js/spin.js', './js/multi.js',
+  './js/_ns.js', './js/random.js', './js/util.js', './js/core.js', './js/icons.js', './js/sound.js', './js/spin.js', './js/multi.js', './js/wheels.js', './js/state.js'
   './转盘/_index.js',
   './转盘/01-穿越后的时间点.js', './转盘/02-事件成长-平安时代.js', './转盘/03-事件成长-400年前.js',
   './转盘/04-事件成长-怀玉_0卷时期.js', './转盘/05-穿越后的地点.js', './转盘/06-穿越后的初始身份.js',

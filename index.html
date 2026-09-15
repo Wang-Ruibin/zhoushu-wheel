@@ -63,6 +63,8 @@
 <script src="js/sound.js"></script>
 <script src="js/spin.js"></script>
 <script src="js/multi.js"></script>
+<script src="js/wheels.js"></script>
+<script src="js/state.js"></script>
 
 <script>
 (function(){
@@ -74,18 +76,124 @@
    ⚠️ 加新的 js 文件时：在那个文件里 Object.assign(ZW, {...})，
       再到这里补一行转发（顺序要对齐 index.html 里 <script src> 的顺序）。
    ========================================================================= */
-const { TAU, FONT, WFONT, PALETTES,
-        $, $$, esc, uid, num, norm, clamp,
-        random, setRandomSeed, randomSeed, randomDraws, replayCode, parseReplayCode,
-        hslToHex, hexToRgb, colorOf, textOn, shuffleArr,
-        usePalette, paletteOf, paletteKeyNow,
-        svg, ICONS, icon,
-        audio, beep, tickSound, loadGearSfx, playGearSfx, gearTick, winSound, vibrate,
-        useAudioConfig, hasGearSfx,
-        spin, animateSpin, applySpinFx, startSpinFx, endSpinFx, spinFxKey, SPIN_FX,
-        setResult, setLiveText, beginRolling, endRolling, useSpinHooks, prefersReducedMotion,
-        FACE_WHEN, whenLabel, gradeIndex, matchWhen, isMultiWheel, faceSourceName, faceCount,
-        lastResultOf, faceOf, optionsOf, faceDesc, useMultiHooks, byRef } = ZW;
+const { TAU,
+        FONT,
+        WFONT,
+        PALETTES,
+        $,
+        $$,
+        esc,
+        uid,
+        num,
+        norm,
+        clamp,
+        random,
+        setRandomSeed,
+        randomSeed,
+        randomDraws,
+        replayCode,
+        parseReplayCode,
+        hslToHex,
+        hexToRgb,
+        colorOf,
+        textOn,
+        shuffleArr,
+        usePalette,
+        paletteOf,
+        paletteKeyNow,
+        svg,
+        ICONS,
+        icon,
+        audio,
+        beep,
+        tickSound,
+        loadGearSfx,
+        playGearSfx,
+        gearTick,
+        winSound,
+        vibrate,
+        useAudioConfig,
+        hasGearSfx,
+        spin,
+        animateSpin,
+        applySpinFx,
+        startSpinFx,
+        endSpinFx,
+        spinFxKey,
+        SPIN_FX,
+        setResult,
+        setLiveText,
+        beginRolling,
+        endRolling,
+        useSpinHooks,
+        prefersReducedMotion,
+        FACE_WHEN,
+        whenLabel,
+        gradeIndex,
+        matchWhen,
+        isMultiWheel,
+        faceSourceName,
+        faceCount,
+        lastResultOf,
+        faceOf,
+        optionsOf,
+        faceDesc,
+        useMultiHooks,
+        byRef,
+        state,
+        chartDwellSec,
+        RECOVERY_KEY,
+        currentWheel,
+        activeOptions,
+        layoutSectors,
+        seed,
+        wheelById,
+        save,
+        nextOf,
+        nextInOrderAfter,
+        BASE_FLOW,
+        optById,
+        wheelOptions,
+        STAY,
+        END,
+        saveSoon,
+        makeWheel,
+        pushUndo,
+        storageStatus,
+        CHART_DWELL_MIN,
+        profileIndex,
+        undoStack,
+        findOptionById,
+        wheelMatchesFilter,
+        inferWheelCategory,
+        editFaceIndex,
+        faceOptions,
+        slotText,
+        defaultTargetLabel,
+        simulateWheel,
+        editOpts,
+        editOptsName,
+        STATE_VER,
+        normalize,
+        undoToast,
+        version,
+        LS_KEY,
+        PROFILE_PREFIX,
+        loadState,
+        storageErrorReset,
+        moveWheel,
+        makeOption,
+        parseBatch,
+        addProfile,
+        renameProfile,
+        deleteProfile,
+        undoLast,
+        switchProfile,
+        WHEEL_CATEGORIES,
+        winnerIndex,
+        pickIndex,
+        addHistory,
+        HINT_KEY } = ZW;
 /* 多面转盘模块也不认识 state，这里把主逻辑里的东西喂给它 */
 useMultiHooks({
   parseGrade: label => parseGrade(label),
@@ -99,351 +207,18 @@ useMultiHooks({
 
 /* 维度图自动弹窗的停留时长（秒）→ 规范成 [下限, 上限] 里的数；没设/设成 0 用默认值。
    放在最前面是因为 normalize() 会用到它。 */
-function chartDwellSec(v){
-  const n = num(v);
-  if (!(n > 0)) return CHART_DWELL_DEF;
-  return clamp(n, CHART_DWELL_MIN, CHART_DWELL_MAX);
-}
 function chartAutoDwellMs(){
   return Math.round(chartDwellSec(state.settings.chartDwell) * 1000);
 }
 
 /* ============================== 数据 ============================== */
-const LS_KEY = 'zhoushu-wheel.v1';
-const HINT_KEY = 'zhoushu-wheel.hint';
-const RECOVERY_KEY = 'zhoushu-wheel.import-recovery.v1';
-const PROFILE_INDEX_KEY = 'zhoushu-wheel.profiles.v1';
-const PROFILE_PREFIX = 'zhoushu-wheel.profile.';
-const BASE_ALL = 0.0001;
-const BASE_SETTINGS = {
-  palette:'xuan', theme:'light', sound:true, vibrate:true,
-  duration:4.2, rolling:true, autoFlip:false, historyLimit:50,
-  autoSave:true,      // 改动后自动写回「转盘」文件夹（需要授权过一次）
-  chartOnEnd:true,    // 流程结束时自动弹出属性维度图
-  chartMid:true,      // 流程走到某个转盘、而这个位置正好有一张维度图时，也弹出来看一眼
-  chartDwell:3.4,     // 中途自动弹出的维度图停留几秒（0 = 不自动弹）
-  chartColor:'zhu',   // 维度图配色（CHART_INKS 的 key）
-  wheelColor:'jin',   // 法轮配色（独立设置，默认赭金=黄铜）
-  wheelAlpha:0.40,    // 法轮透明度
-  spinFx:'bounce',    // 旋转的物理效果（SPIN_FX 的 key）
-  fromFiles:false,    // 仅内部用：true = 每次打开都以文件覆盖
-  randomSeed:''       // 留空 = 真随机；填写后同版本同数据可复现
-};
-/* ---- 维度图自动弹出的节奏（想微调改这里就行） ---- */
 const CHART_SHOW_DELAY = 650;      // 抽完之后等多久弹出来（毫秒）；先让结果动效播完
-const CHART_DWELL_MIN  = 1.0;      // 停留时长下限（秒）
-const CHART_DWELL_MAX  = 30;       // 停留时长上限（秒）
-const CHART_DWELL_DEF  = 3.4;      // 没设置过 / 设成 0 时的默认停留时长（秒）
 const CHART_RESUME_GAP = 280;      // 收起后等多久再继续下一站（毫秒）；等收起动画走完
-const STATE_VER = 3;
-const END = '__end__', STAY = '__stay__';
-const BASE_FLOW = { enabled:true, rootId:'', autoJump:true, autoSpin:false, delay:1.6, path:[], pendingId:'', retStack:[], paused:false };
-const BASE_WHEELS = [
-  { name:'穿越后的初始身份', labels:['咒术师','诅咒师','咒灵','咒骸','式神','咒具','魂穿原著角色','咒术高层','普通人'] },
-  { name:'穿越后的时间点',   labels:['怀玉时期','0卷时期','剧情开始时','涩谷事变时期','死灭回游时期','新宿决战时期','68年后·外传','平安时代（千年前）','400年前'] },
-  { name:'穿越后的地点',     opts:[['日本',40],['亚洲除日本其他地方',9],['北美洲',8],['欧洲',8],['澳洲',7],['非洲',6],['南美洲',5],['澳大利亚星人·自动刷',4]] },
-  { name:'穿越后的年龄',     opts:[['刚出生的婴儿',3],['11岁是小学生',12],['16岁未成年',10],['刚满18岁',7],['24大好青年',9],['30岁壮年巅峰期',10],['40岁中年人',9],['55岁过半百',16],['66岁老年人',10],['75古稀之年',10],['88岁耄耋之年',5],['99极限斗罗',3]] },
-  { name:'穿越后的性别',     opts:[['女',48],['男',40],['武装直升机',7],['不男不女',5]] },
-  { name:'穿越后的颜值',     opts:[['E（面目可憎）',16],['咒术回战看多了诞生的咒灵',4],['EX（咒术魅魔）',8],['SSS（倾国倾城）',10],['SS（沉鱼落雁）',12],['S（国色天香）',12],['A（花容月貌）',11],['B（眉清目秀）',9],['C（其貌不扬）',9],['D（尖嘴猴腮）',8]] },
-  { name:'道德水平',         opts:[['SS（光明磊落）',16],['SSS（高风亮节）',10],['EX（超凡入圣）',12],['E-（禽兽不如）',12],['E（丧心病狂）',11],['D（恬不知耻）',8],['C（见利忘义）',9],['B（见义勇为）',10],['A（安分守己）',10],['S（乐善好施）',10]] },
-  { name:'穿越后的术式天赋', labels:['无下限术式','十种影法术','咒灵操术','无为转变','赤血操术','投射咒法','构筑术式','复制术式','纯体术·无术式'] },
-  { name:'穿越后的金手指',   labels:['咒力量十倍','无限咒力','熟知全部剧情','随身咒具库','一次时间回溯','弱化版六眼','主角光环','系统面板','没有金手指'] },
-  { name:'最终结局',         labels:['成为最强','与挚友并肩','死在涩谷','被咒灵同化','苟到大结局','改写历史','成为咒灵王','回到原来的世界'] }
-];
-/* v3 新增的内置转盘（老存档升级时按名字补进来） */
-const V3_PRESETS = ['穿越后的地点', '穿越后的年龄', '穿越后的性别', '穿越后的颜值', '道德水平'];
-const WHEEL_CATEGORIES = ['角色', '属性', '能力', '事件', '结局', '自定义'];
-function inferWheelCategory(name){
-  const s = String(name || '');
-  if (/事件|成长/.test(s)) return '事件';
-  if (/结局|等级评定/.test(s)) return '结局';
-  if (/咒力|体术|体质|天赋|道德|声望|颜值/.test(s)) return '属性';
-  if (/术式|技巧|金手指|身份/.test(s)) return '能力';
-  if (/穿越|地点|性别|时间/.test(s)) return '角色';
-  return '自定义';
-}
 
-function makeOption(label, weight, color, next){
-  return { id:uid(), label:String(label == null ? '' : label), weight: weight == null ? 1 : num(weight),
-           color: color || null, next: next || '' };
-}
-/* 存档里的一项选项 → 运行时选项（纯字符串/数字也认；字段做兜底，脏数据不会让程序打不开） */
-function normOption(o){
-  if (typeof o === 'string' || typeof o === 'number') return makeOption(o);
-  return { id:(o && o.id) || uid(),
-           label:String((o && o.label) == null ? '' : o.label),
-           weight:(o && o.weight == null) ? 1 : num(o.weight),
-           color:(o && o.color) || null,
-           next:(o && typeof o.next === 'string') ? o.next : '' };
-}
-function makeWheel(name, labels){
-  return { id:uid(), name:name, category:'自定义', next:'', branch:false, grade:null, removeAfterPick:false,
-           multi:false, faceBy:'', faces:[], options:(labels || []).map(l => makeOption(l)) };
-}
-/* 内置转盘定义 → 运行时转盘（支持带权重的 opts） */
-function wheelFromDef(def){
-  return {
-    id:uid(), name:def.name, category:def.category || inferWheelCategory(def.name), next:'', branch:!!def.branch, grade:(def.grade === true ? true : (def.grade === false ? false : null)),
-    removeAfterPick:false, multi:false, faceBy:'', faces:[],
-    options: def.opts ? def.opts.map(p => makeOption(p[0], p[1])) : (def.labels || []).map(l => makeOption(l))
-  };
-}
-function seed(){
-  const s = {
-    version:STATE_VER, currentId:null,
-    wheels: BASE_WHEELS.map(wheelFromDef),
-    charts: [],
-    settings: Object.assign({}, BASE_SETTINGS),
-    history: [], flow: Object.assign({}, BASE_FLOW)
-  };
-  s.currentId = s.wheels[0].id;
-  const byName = n => s.wheels.filter(w => w.name === n)[0];
-  const link = (from, to) => { const a = byName(from), b = byName(to); if (a) a.next = b ? b.id : END; };
-  const branch = (wName, optLabel, toName) => {
-    const w = byName(wName), t = byName(toName);
-    if (!w || !t) return;
-    const o = w.options.filter(x => x.label === optLabel)[0];
-    if (o) o.next = t.id;
-  };
-  link('穿越后的初始身份', '穿越后的时间点');
-  link('穿越后的时间点', '穿越后的地点');
-  link('穿越后的地点', '穿越后的年龄');
-  link('穿越后的年龄', '穿越后的性别');
-  link('穿越后的性别', '穿越后的颜值');
-  link('穿越后的颜值', '道德水平');
-  link('道德水平', '穿越后的术式天赋');
-  link('穿越后的术式天赋', '穿越后的金手指');
-  link('穿越后的金手指', '最终结局');
-  const last = byName('最终结局'); if (last) last.next = END;
-  // 示例分支：不同选项去不同转盘
-  branch('穿越后的初始身份', '魂穿原著角色', '穿越后的术式天赋');
-  branch('穿越后的初始身份', '咒灵', '最终结局');
-  branch('穿越后的初始身份', '普通人', '最终结局');
-  s.flow.rootId = s.wheels[0].id;
-  return s;
-}
-/* v2 → v3：把新增的内置转盘补进老存档，并接回原来的链路 */
-function upgradeToV3(s){
-  const have = {};
-  s.wheels.forEach(w => { have[w.name] = w; });
-  const add = [];
-  V3_PRESETS.forEach(name => {
-    if (have[name]) return;
-    const def = BASE_WHEELS.filter(b => b.name === name)[0];
-    if (def) add.push(wheelFromDef(def));
-  });
-  if (!add.length) return s;
-  const anchor = have['穿越后的时间点'];
-  const tail = have['穿越后的术式天赋'];
-  const at = anchor ? s.wheels.indexOf(anchor) + 1 : s.wheels.length;
-  s.wheels.splice.apply(s.wheels, [at, 0].concat(add));
-  const oldNext = (anchor && anchor.next) || (tail ? tail.id : END);
-  add.forEach((w, i) => { w.next = i < add.length - 1 ? add[i + 1].id : oldNext; });
-  if (anchor && (!anchor.next || anchor.next === (tail ? tail.id : END))) anchor.next = add[0].id;
-  if (s.flow && !s.flow.rootId && s.wheels.length) s.flow.rootId = s.wheels[0].id;
-  return s;
-}
-function normalize(d){
-  const s = {
-    version:STATE_VER,
-    wheels:[],
-    currentId: d && d.currentId,
-    settings: Object.assign({}, BASE_SETTINGS, (d && d.settings) || {}),
-    history: (d && Array.isArray(d.history)) ? d.history.filter(h => h && h.label) : []
-  };
-  const ws = (d && Array.isArray(d.wheels)) ? d.wheels : [];
-  s.wheels = ws.filter(w => w && typeof w === 'object').map(w => ({
-    id: w.id || uid(),
-    name: String(w.name == null ? '未命名转盘' : w.name),
-    category: WHEEL_CATEGORIES.indexOf(w.category) >= 0 ? w.category : inferWheelCategory(w.name),
-    removeAfterPick: !!w.removeAfterPick,
-    next: (w.next && typeof w.next === 'string') ? w.next : '',
-    branch: !!w.branch,
-    grade: (w.grade === true ? true : (w.grade === false ? false : null)),
-    /* 多面转盘：multi / faceBy（存 id）/ faces[]（每个面一套 when + options） */
-    multi: w.multi === true || (Array.isArray(w.faces) && w.faces.length > 0),
-    faceBy: (typeof w.faceBy === 'string') ? w.faceBy : '',
-    faces: (Array.isArray(w.faces) ? w.faces : []).map(f => ({
-      when: (f && f.when && typeof f.when === 'object') ? f.when : { type:'else' },
-      options: ((f && Array.isArray(f.options)) ? f.options : []).map(o => normOption(o))
-    })),
-    options: (Array.isArray(w.options) ? w.options : []).map(o => normOption(o))
-  }));
-  if (s.wheels.length) {
-    s.currentId = s.wheels[0].id;
-    if (d && d.currentId && s.wheels.some(w => w.id === d.currentId)) s.currentId = d.currentId;
-  }
-  s.settings.duration = clamp(num(s.settings.duration) || 4.2, 1, 12);
-  if (!PALETTES[s.settings.palette]) s.settings.palette = 'xuan';
-  if (s.settings.theme !== 'dark') s.settings.theme = 'light';
-  if (!s.settings.historyLimit) s.settings.historyLimit = 50;
-  if (s.settings.autoSave !== false) s.settings.autoSave = true;
-  if (s.settings.chartOnEnd !== false) s.settings.chartOnEnd = true;
-  if (s.settings.chartMid !== false) s.settings.chartMid = true;      // 老的存档没有 → 默认开
-  s.settings.chartDwell = chartDwellSec(s.settings.chartDwell);
-  if (!s.settings.chartColor) s.settings.chartColor = 'zhu';
-  if (!s.settings.wheelColor) s.settings.wheelColor = 'jin';
-  s.settings.wheelAlpha = clamp(num(s.settings.wheelAlpha) || 0.40, 0.05, 1);
-  if (!s.settings.spinFx) s.settings.spinFx = 'bounce';
-  /* 老存档里的效果名迁移：摇摆 → 2D滚筒，甩出（已移除）→ 颠簸 */
-  if (s.settings.spinFx === 'sway') s.settings.spinFx = 'drum2d';
-  if (s.settings.spinFx === 'lean') s.settings.spinFx = 'bounce';
-  s.lastChart = (d && d.lastChart && Array.isArray(d.lastChart.dims) && d.lastChart.dims.length)
-    ? { at: num(d.lastChart.at) || Date.now(), dims: d.lastChart.dims.filter(x => x && x.label) } : null;
-  /* 属性维度图：点「新建」时把当时的属性定格成一张图，之后不再改变 */
-  s.charts = (d && Array.isArray(d.charts) ? d.charts : [])
-    .filter(c => c && Array.isArray(c.dims) && c.dims.length)
-    .map((c, i) => ({
-      id: c.id || uid(),
-      name: String(c.name == null ? ('属性维度图 ' + (i + 1)) : c.name),
-      at: num(c.at) || Date.now(),
-      after: (typeof c.after === 'string') ? c.after : '',
-      dims: c.dims.filter(x => x && x.label).map(x => ({ wheel:String(x.wheel || ''), label:String(x.label), value: num(x.value) }))
-    }))
-    .slice(-60);
-  // v1 → v2：整体换成纸张/手绘皮肤，旧默认配色「鲜艳」一并迁移到「宣纸」
-  if (num(d && d.version) < 2 && s.settings.palette === 'vivid') s.settings.palette = 'xuan';
-  // v2 → v3：补齐新增的内置转盘（地点 / 年龄 / 性别 / 颜值 / 道德水平）
-  if (num(d && d.version) < 3) upgradeToV3(s);
-  const f = (d && d.flow && typeof d.flow === 'object') ? d.flow : {};
-  s.flow = {
-    enabled: f.enabled !== false,
-    rootId: typeof f.rootId === 'string' ? f.rootId : '',
-    autoJump: f.autoJump !== false,
-    autoSpin: !!f.autoSpin,
-    delay: clamp(num(f.delay) || 1.6, 0.4, 8),
-    path: (Array.isArray(f.path) ? f.path : []).filter(p => p && p.label).slice(-40),
-    pendingId:'', retStack:[], paused:false, roundAt:0, grow:{}
-  };
-  if (s.flow.path.length) s.flow.path.forEach(p => { if (p && typeof p.wheel !== 'string') p.wheel = ''; });
-  if (s.flow.rootId && !s.wheels.some(w => w.id === s.flow.rootId)) s.flow.rootId = '';
-  return s;
-}
-function load(){
-  let s = null;
-  try { const raw = localStorage.getItem(LS_KEY); if (raw) s = normalize(JSON.parse(raw)); } catch(e){ s = null; }
-  if (!s || !s.wheels.length) s = seed();
-  if (!s.wheels.some(w => w.id === s.currentId)) s.currentId = s.wheels[0].id;
-  return s;
-}
-const storageStatus = { ok:true, at:0, error:'' };
-let storageErrorShown = false;
-function save(){
-  let ok = true;
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(state));
-    if (profileIndex && profileIndex.current) localStorage.setItem(PROFILE_PREFIX + profileIndex.current, JSON.stringify(state));
-    storageStatus.ok = true;
-    storageStatus.at = Date.now();
-    storageStatus.error = '';
-    storageErrorShown = false;
-  } catch(e) {
-    ok = false;
-    storageStatus.ok = false;
-    storageStatus.error = (e && e.message) || '浏览器拒绝写入';
-    if (!storageErrorShown) {
-      storageErrorShown = true;
-      setTimeout(() => toast('保存失败：改动目前只在本次会话中，请立即导出备份'), 0);
-    }
-  }
-  scheduleSync();
-  return ok;
-}
-let saveTimer = null;
-function saveSoon(){ clearTimeout(saveTimer); saveTimer = setTimeout(save, 200); }
 
-let state = load();
-setRandomSeed(state.settings.randomSeed || '');
-let profileIndex = (() => {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(PROFILE_INDEX_KEY) || 'null');
-    if (parsed && Array.isArray(parsed.items) && parsed.items.length && parsed.current) return parsed;
-  } catch(e){}
-  return { current:'default', items:[{ id:'default', name:'默认世界线', updated:Date.now() }] };
-})();
 let importRecoveryRaw = (() => {
   try { return localStorage.getItem(RECOVERY_KEY) || ''; } catch(e) { return ''; }
 })();
-const undoStack = [];
-function pushUndo(label){
-  undoStack.push({ label:String(label || '上一步操作'), raw:JSON.stringify(state) });
-  if (undoStack.length > 12) undoStack.shift();
-}
-function undoLast(){
-  const item = undoStack.pop();
-  if (!item) { toast('没有可以撤销的操作'); return false; }
-  try { state = normalize(JSON.parse(item.raw)); }
-  catch(e) { toast('撤销失败：恢复点已损坏'); return false; }
-  setRandomSeed(state.settings.randomSeed || '');
-  save(); applyTheme(); refreshTitle(); requestDraw(); renderFlowBar();
-  if (isOverlayOpen()) renderSheet('swap');
-  toast('已撤销：' + item.label);
-  return true;
-}
-function undoToast(message){
-  toast(message, { action:'撤销', fn:undoLast });
-}
-function saveProfileIndex(){
-  try { localStorage.setItem(PROFILE_INDEX_KEY, JSON.stringify(profileIndex)); return true; }
-  catch(e) { markStorageFailure(e); return false; }
-}
-function currentProfile(){
-  return profileIndex.items.filter(item => item.id === profileIndex.current)[0] || profileIndex.items[0];
-}
-function activateProfileState(next){
-  state = normalize(next);
-  setRandomSeed(state.settings.randomSeed || '');
-  save(); applyTheme(); refreshTitle(); requestDraw(); renderFlowBar();
-  if (isOverlayOpen()) renderSheet('swap');
-}
-function switchProfile(id){
-  const target = profileIndex.items.filter(item => item.id === id)[0];
-  if (!target || target.id === profileIndex.current) return true;
-  if (!save()) return false;
-  let next = null;
-  try { const raw = localStorage.getItem(PROFILE_PREFIX + target.id); if (raw) next = JSON.parse(raw); } catch(e){}
-  profileIndex.current = target.id; target.updated = Date.now(); saveProfileIndex();
-  activateProfileState(next || seed());
-  toast('已切换到「' + target.name + '」');
-  return true;
-}
-async function addProfile(){
-  const name = await askDialog({ title:'新建世界线', desc:'创建一份独立的默认转盘、历史和成长记录。', value:'新世界线', ok:'创建' });
-  if (name === null) return false;
-  if (!save()) return false;
-  const id = uid();
-  const item = { id, name:String(name).trim() || '新世界线', updated:Date.now() };
-  profileIndex.items.push(item); profileIndex.current = id; saveProfileIndex();
-  activateProfileState(seed());
-  toast('已创建「' + item.name + '」');
-  return true;
-}
-async function renameProfile(){
-  const item = currentProfile();
-  const name = await askDialog({ title:'重命名世界线', value:item.name, ok:'保存' });
-  if (name === null) return false;
-  item.name = String(name).trim() || item.name; item.updated = Date.now(); saveProfileIndex(); renderSheet('swap');
-  return true;
-}
-async function deleteProfile(){
-  if (profileIndex.items.length <= 1) { toast('至少保留一条世界线'); return false; }
-  const item = currentProfile();
-  const confirmed = await askDialog({ title:'删除世界线', desc:'确定删除「' + item.name + '」及其独立记录？', ok:'删除', danger:true });
-  if (!confirmed) return false;
-  try { localStorage.removeItem(PROFILE_PREFIX + item.id); } catch(e){}
-  profileIndex.items = profileIndex.items.filter(x => x.id !== item.id);
-  profileIndex.current = profileIndex.items[0].id; saveProfileIndex();
-  let next = null;
-  try { const raw = localStorage.getItem(PROFILE_PREFIX + profileIndex.current); if (raw) next = JSON.parse(raw); } catch(e){}
-  activateProfileState(next || seed());
-  toast('世界线已删除');
-  return true;
-}
-/* js/util.js 的 colorOf 需要知道当前调色板；它不认识 state，所以从这里注入 */
-usePalette(() => state && state.settings ? state.settings.palette : 'xuan');
-/* 声音模块同理：音效 / 震动开关也从这里喂进去 */
-useAudioConfig({ sound: () => !!(state && state.settings && state.settings.sound),
-                 vibrate: () => !!(state && state.settings && state.settings.vibrate) });
 const ui = { view:'none', mtab:'wheels', treeOpen:{}, targetCtx:null, flowCollapsed:false, resultLabel:'', resultOptId:'',
              faceWheelId:'', faceEdit:'auto', faceWhenIdx:-1, wheelQuery:'', wheelFilter:'all', simResults:null };
 /* 跨模块共享的运行时变量在 js/core.js 里。转盘角度 rot 由 js/spin.js 每帧改写、
@@ -455,70 +230,6 @@ function setRot(v){ core.rot = v; }
 /* 给 js/spin.js 用的读写口 + 重绘触发（模块之间只通过这些函数来往，不碰内部变量） */
 Object.assign(ZW.rot = ZW.rot || {}, { get:getRot, set:setRot });
 
-function currentWheel(){
-  if (!state.wheels.length) state.wheels.push(makeWheel('新转盘', ['选项 1', '选项 2']));
-  return state.wheels.filter(w => w.id === state.currentId)[0] || state.wheels[0];
-}
-/* ★ 多面转盘的唯一收口：一个转盘「此刻该展示的全部选项」。
-   ⚠️ 凡是"要展示 / 要抽"的地方都得走这里，别直接读 w.options ——
-      否则多面转盘在那些地方会显示成兜底面。
-      （编辑界面是例外：那里要能编辑任意一个面，走 faceOptions(w, faceIndex)。）*/
-function wheelOptions(w){
-  const x = w || currentWheel();
-  return isMultiWheel(x) ? (optionsOf(x) || []) : (x.options || []);
-}
-/* 某张面（index = -1 表示兜底面）的选项 —— 给编辑界面用 */
-function faceOptions(w, index){
-  if (!isMultiWheel(w)) return w.options || [];
-  if (index < 0) return w.options || [];
-  const f = (w.faces || [])[index];
-  return (f && Array.isArray(f.options)) ? f.options : [];
-}
-function activeOptions(w){ return wheelOptions(w).filter(o => num(o.weight) > 0); }
-
-/* ============================== 转盘几何 ============================== */
-function layoutSectors(opts, wheel){
-  // 颜色按「转盘里当前展示的完整顺序」取，停用某个选项后其余颜色不会跳变
-  // ⚠️ 多面转盘要按「当前这一面」的顺序取色，所以这里不能用 w.options
-  const w = wheel || currentWheel();
-  const all = wheelOptions(w);
-  let total = 0;
-  opts.forEach(o => { total += Math.max(BASE_ALL, num(o.weight)); });
-  let a = -Math.PI / 2;
-  return opts.map(o => {
-    const span = TAU * (Math.max(BASE_ALL, num(o.weight)) / total);
-    const ci = Math.max(0, all.indexOf(o));
-    const sec = { opt:o, start:a, end:a + span, mid:a + span / 2, span:span, color:colorOf(w, o, ci) };
-    a += span;
-    return sec;
-  });
-}
-function winnerIndex(secs, rotation){
-  const p = -Math.PI / 2;
-  for (let i = 0; i < secs.length; i++) {
-    const rel = norm(p - rotation - secs[i].start);
-    if (rel < secs[i].span - 1e-9) return i;
-  }
-  return secs.length - 1;
-}
-function pickIndex(opts, rand){
-  const rng = typeof rand === 'function' ? rand : random;
-  const ws = opts.map(o => Math.max(0, num(o.weight)));
-  const total = ws.reduce((a, b) => a + b, 0);
-  if (total <= 0) return Math.floor(rng() * opts.length);
-  let r = rng() * total;
-  for (let i = 0; i < ws.length; i++) { r -= ws[i]; if (r < 0) return i; }
-  return ws.length - 1;
-}
-function parseBatch(text){
-  return String(text || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => {
-    let m = l.match(/^(.*?)\s*[*×xX]\s*(\d+(?:\.\d+)?)$/) || l.match(/^(.*?)\s*[,，、\t]\s*(\d+(?:\.\d+)?)$/);
-    if (m && m[1].trim()) return { label:m[1].trim(), weight:num(m[2]) };
-    return { label:l, weight:1 };
-  }).filter(o => o.label);
-}
-
-/* ============================== 绘制 ============================== */
 const canvas = $('#wheel');
 const ctx = canvas.getContext('2d');
 const resultEl = $('#result');
@@ -762,12 +473,6 @@ function sketchCircle(cx, cy, r, seed, passes, alphaBase){
 /* 旋转（setResult / setLiveText / SPIN_FX / applySpinFx / animateSpin / spin）
    在 js/spin.js 里 —— 那边的函数从 ZW.dom 和注入的 hooks 拿依赖 */
 
-function addHistory(w, label){
-  state.history.unshift({ id:uid(), wheelId:w.id, wheel:w.name, label:label, at:Date.now() });
-  const lim = Math.max(10, num(state.settings.historyLimit) || 50);
-  state.history = state.history.slice(0, lim);
-  saveSoon();
-}
 function fmtTime(t){
   const d = new Date(t || Date.now());
   const p = n => String(n).padStart(2, '0');
@@ -776,33 +481,6 @@ function fmtTime(t){
 
 /* ============================== 分支流程 ============================== */
 let jumpTimer = null, arriveTimer = null;
-function wheelById(id){ return state.wheels.filter(w => w.id === id)[0] || null; }
-function optById(wid, oid){
-  const w = wheelById(wid);
-  /* 走 findOptionById：兜底面和各层的面都找得到（多面转盘必需） */
-  return w ? findOptionById(w, oid) : null;
-}
-function slotText(v){
-  if (!v) return '未设置';
-  if (v === END) return '流程结束';
-  if (v === STAY) return '留在本盘';
-  const t = wheelById(v);
-  return t ? t.name : '（目标已删除）';
-}
-function nextOf(wheel, opt){
-  const v = (opt && opt.next) || (wheel && wheel.next) || '';
-  if (v === END) return { kind:'end' };
-  if (v === STAY) return { kind:'stay' };
-  if (v) {
-    const t = wheelById(v);
-    return t ? { kind:'wheel', id:t.id, wheel:t } : { kind:'none' };
-  }
-  /* 都没设 → 跟随「转盘页的列表顺序」里的下一个普通转盘（分支转盘跳过）；
-     已经是最后一个就收尾。想停在原地请显式设「留在本盘」。 */
-  const alt = wheel ? nextInOrderAfter(wheel.id) : null;
-  if (alt) return { kind:'wheel', id:alt.id, wheel:alt, byOrder:true };
-  return { kind:'end', byOrder:true };
-}
 let chartAutoTimer = null;
 let chartFlowDone = null;          // 自动弹图时「收起之后接着要做什么」（流程继续往下一站）
 /* 自动弹出的维度图被收起来了 → 通知流程继续。
@@ -873,14 +551,6 @@ function showChartForEnd(done){
   showChartThen(last, done || null);
   return true;
 }
-/* 给界面用：这个转盘的「默认下一站」实际会去哪儿 */
-function defaultTargetLabel(w){
-  const nx = nextOf(w, null);
-  if (nx.kind === 'wheel') return nx.wheel.name + (nx.byOrder ? '（按列表顺序）' : '');
-  if (nx.kind === 'end') return nx.byOrder ? '流程结束（已是最后一个）' : '流程结束';
-  if (nx.kind === 'stay') return '留在本盘';
-  return '未设置';
-}
 function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
 function clearJump(){
   if (jumpTimer) { clearTimeout(jumpTimer); jumpTimer = null; }
@@ -920,15 +590,6 @@ function resetFlow(){
   renderFlowBar();
   if (rootId !== state.currentId) switchTo(rootId, { silent:true });
   else toast('已回到起点');
-}
-/* 列表顺序里，某个转盘之后的下一个「非分支」转盘（分支转盘不进默认顺序） */
-function nextInOrderAfter(wheelId){
-  const idx = state.wheels.findIndex(w => w.id === wheelId);
-  if (idx < 0) return null;
-  for (let i = idx + 1; i < state.wheels.length; i++) {
-    if (!state.wheels[i].branch) return state.wheels[i];
-  }
-  return null;
 }
 function flowJump(w, opt, label){
   const f = state.flow;
@@ -2204,15 +1865,6 @@ function staleEndWheels(){
   const lastId = normal.length ? normal[normal.length - 1].id : '';
   return state.wheels.filter(w => w.next === END && w.id !== lastId);
 }
-function wheelMatchesFilter(w, query, filter){
-  const q = String(query || '').trim().toLocaleLowerCase();
-  if (q && String(w.name || '').toLocaleLowerCase().indexOf(q) < 0 &&
-      wheelOptions(w).every(o => String(o.label || '').toLocaleLowerCase().indexOf(q) < 0)) return false;
-  if (!filter || filter === 'all') return true;
-  if (filter === 'branch') return !!w.branch;
-  if (filter === 'multi') return isMultiWheel(w);
-  return w.category === filter;
-}
 function tabWheels(){
   const cur = currentWheel();  const nBranch = state.wheels.filter(w => w.branch).length;
   /* 维度图按「排在哪个转盘之后」插进列表里；没指定 / anchor 已删的排在最后 */
@@ -2367,13 +2019,6 @@ function viewFaces(){
     '</div>';
 }
 
-/* 编辑中的那张面：'auto' = 当前实际命中的那一面；数字 = 指定第几面；-1 = 兜底面 */
-function editFaceIndex(w){
-  if (!isMultiWheel(w)) return -1;
-  const e = ui.faceEdit;
-  if (e === 'auto' || e == null) return faceOf(w).index;
-  return num(e);
-}
 function editFaceOptions(w){
   const idx = editFaceIndex(w);
   return idx < 0 ? (w.options || []) : (faceOptions(w, idx) || []);
@@ -2451,37 +2096,6 @@ function viewFaceWhen(){
 /* 按 id 找一个选项 —— 兜底面和各层的面都要找。
    ⚠️ 凡是"按 id 定位选项"的地方都该用它（输入、删除、改色、跳转目标…），
       只查 w.options 会让多面转盘的面里那些选项变成"点了没反应"。 */
-function findOptionById(w, id){
-  if (!w || !id) return null;
-  const hit = (w.options || []).filter(o => o.id === id)[0];
-  if (hit) return hit;
-  const faces = Array.isArray(w.faces) ? w.faces : [];
-  for (let i = 0; i < faces.length; i++) {
-    const arr = (faces[i] && Array.isArray(faces[i].options)) ? faces[i].options : [];
-    const f = arr.filter(o => o.id === id)[0];
-    if (f) return f;
-  }
-  return null;
-}
-/* 编辑操作（增删/改色/乱序/清空/批量）作用在「当前编辑的那一面」上。
-   ⚠️ 普通转盘就是 w.options；多面转盘要看「选项内容」页顶上选了哪一面。 */
-function editOpts(w, create){
-  const x = w || currentWheel();
-  if (!isMultiWheel(x)) return x.options;
-  const idx = editFaceIndex(x);
-  if (idx < 0) return x.options;
-  const f = (x.faces || [])[idx];
-  if (!f) return x.options;
-  if (!Array.isArray(f.options) && create) f.options = [];
-  if (!Array.isArray(f.options)) f.options = [];
-  return f.options;
-}
-function editOptsName(w){
-  const x = w || currentWheel();
-  if (!isMultiWheel(x)) return '';
-  const idx = editFaceIndex(x);
-  return idx < 0 ? '兜底面' : ('第 ' + (idx + 1) + ' 面');
-}
 
 function tabContent(){
   const w = currentWheel();
@@ -2541,24 +2155,6 @@ function tabContent(){
     list +
     '<div class="hint">颜色块可单独改色，点 <b>A</b> 恢复跟随主题。</div>' +
     growHintBlock(w, w.options);   // 这个盘里写着「XX+N」但**对不上任何转盘**的，在这里点出来
-}
-function simulateWheel(wheel, runs){
-  const options = activeOptions(wheel || currentWheel());
-  const n = Math.max(100, Math.min(100000, Math.floor(num(runs) || 10000)));
-  if (!options.length) return { runs:n, rows:[] };
-  let seed = 0x9e3779b9;
-  const rng = () => {
-    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-    return seed / 4294967296;
-  };
-  const counts = options.map(() => 0);
-  for (let i = 0; i < n; i++) counts[pickIndex(options, rng)]++;
-  const total = options.reduce((sum, option) => sum + Math.max(0, num(option.weight)), 0);
-  return { runs:n, rows:options.map((option, i) => ({
-    id:option.id, label:option.label, count:counts[i],
-    expected:total > 0 ? Math.max(0, num(option.weight)) / total : 1 / options.length,
-    observed:counts[i] / n
-  })) };
 }
 function viewSimulation(){
   const data = ui.simResults || simulateWheel(currentWheel(), 10000);
@@ -2751,14 +2347,6 @@ function applyTheme(){
   if (m) m.content = state.settings.theme === 'dark' ? '#141317' : '#F3EFE4';
   requestDraw();
 }
-function moveWheel(id, dir){
-  const i = state.wheels.findIndex(w => w.id === id);
-  const j = i + dir;
-  if (i < 0 || j < 0 || j >= state.wheels.length) return;
-  const t = state.wheels[i]; state.wheels[i] = state.wheels[j]; state.wheels[j] = t;
-  save(); renderSheet();
-}
-/* shuffleArr 在 js/util.js 里 */
 function exportData(){
   try {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type:'application/json' });
@@ -2976,12 +2564,12 @@ function replaceStateWithRecovery(next, beforeRaw){
     return false;
   }
   importRecoveryRaw = beforeRaw;
-  state = next;
+  loadState(next);
   setRandomSeed(state.settings.randomSeed || '');
   storageStatus.ok = true;
   storageStatus.at = Date.now();
   storageStatus.error = '';
-  storageErrorShown = false;
+  storageErrorReset();
   scheduleSync();
   return true;
 }
@@ -3261,7 +2849,7 @@ async function handleAction(act, id, el){
       const ok = await askDialog({ title:'恢复默认', desc:'将清除全部转盘、选项与历史记录，恢复为初始内容', ok:'恢复', danger:true });
       if (!ok) return;
       pushUndo('恢复默认');
-      state = seed(); save(); applyTheme(); refreshTitle(); requestDraw(); renderSheet(); undoToast('已恢复默认内容'); break;
+      loadState(seed()); save(); applyTheme(); refreshTitle(); requestDraw(); renderSheet(); undoToast('已恢复默认内容'); break;
     }
 
     /* ---- 分支流程 ---- */
@@ -4188,6 +3776,9 @@ function exposeDebug(){
   };
   console.log('调试出口已开启 →', ZW.__app.help);
 }
+
+/* 主脚本仍持有的函数也挂到 ZW：先加载的模块（state/flow/storage…）运行时要反查 */
+Object.assign(ZW, { afterChartDismiss, applyGrowth, applyTheme, applyWheelFiles, applyWheelTemplate, askDialog, attrCountUpTo, autoScrollBy, beginRowDrag, bindEvents, boot, brassBall, buildWheelPack, chartAfter, chartAutoDwellMs, chartColors, chartDims, chartInk, chartInkKey, chartLiveDims, chartMidAt, chartPositionText, chartRadiusRatio, chartRowHtml, chartSlotIndex, chartSlots, chartSummary, clearJump, clearRowHold, closeSheet, continueFlow, copyText, createChartSnapshot, createTemplateWheels, cssVar, dharmaWheelCanvas, dimsUpTo, downloadCanvasPng, downloadJson, downloadText, draw, drawDharmaWheel, drawHub, drawRadar, dropLayerIf, editFaceOptions, endRowDrag, expandFlowBar, exportData, exportResultCard, exportWheelPack, exposeDebug, faceEditBar, faceSource, faceToFile, faceWhenText, fileStatusShort, fileStatusText, fitWheel, flowDiagnostics, flowJump, flowModeText, fmtTime, gearAngle, gearMotion, getDir, getRot, growHintBlock, growHintFor, growLabel, growTargetWheel, grownLabel, handleAction, hideOverlay, hideToast, idbGet, idbOpen, idbSet, importDataText, importSummary, importSummaryText, importWheelPackText, indexFileText, init, isGradeWheel, isOverlayOpen, lastLabelOf, loadWheelFiles, loopDetected, markStorageFailure, moveChart, navBack, navCloseAll, navDepth, navGoBack, navHist, navPush, navTo, onRowPointerMove, openSheet, optionFileLine, packWheelIds, parseGrade, parseGrowth, prevChartOf, refreshOptionProbabilities, refreshTitle, registerWheelFile, reloadFromFiles, renderFlowBar, renderSheet, replaceStateWithRecovery, requestDraw, resetFlow, restoreImportState, roundResultText, saveRoundChart, saveToFolder, scheduleFlowCollapse, scheduleSync, setRot, shadeHex, showChartForEnd, showChartThen, showOverlay, sketchCircle, splitTwoLines, staleEndWheels, startChartAnim, stateOptionCount, storageStatusText, switchRow, switchTo, syncToFolder, tabContent, tabHistory, tabSettings, tabWheels, toast, topNav, ui, uniqueImportedName, updateDropLine, viewBatch, viewChart, viewComplete, viewFaceWhen, viewFaces, viewFlowAudit, viewManager, viewNewChart, viewNewPick, viewResult, viewSimulation, viewTarget, viewTemplates, wait, wheelFileName, wheelFileText, wheelInk, wheelInkKey, wrapCanvasText });
 
 /* ============================== 启动 ============================== */
 /* 启动之前把 js/spin.js 需要的依赖注入齐（放在这里是因为要用到上面所有定义） */

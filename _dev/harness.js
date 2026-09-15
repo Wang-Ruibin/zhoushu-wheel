@@ -383,20 +383,32 @@ function loadApp(opts){
      用法：loadApp({ html: fs.readFileSync('_dev/_probe.html','utf8') }) */
   const srcHtml = opts.html || HTML;
   let main = extractScript(srcHtml);
-  const tail = '\n;(globalThis.__T = Object.assign({}, ZW, { state:() => state, ui, NAV, wheelById, nextOf, chartAfter, chartSlots, ' +
-    'chartSlotIndex, flowJump, showChartThen, showChartForEnd, spin, switchTo, navTo, navBack, navGoBack, navCloseAll, ' +
-    'navDepth, isOverlayOpen, topNav, renderSheet, handleAction, isGradeWheel, parseGrade, chartDims, chartLiveDims, ' +
-    'saveRoundChart, resetFlow, renderFlowBar, draw, layoutSectors, applyGrowth, grownLabel, currentWheel, save, load, ' +
-    'normalize, dimsUpTo, createChartSnapshot, prevChartOf, moveChart, moveWheel, applyWheelFiles, wheelFileText, ' +
-    'indexFileText, wheelFileName, attrCountUpTo, scheduleSync, toast, askDialog, loopDetected, nextInOrderAfter, ' +
-    'storageStatus, storageStatusText, importSummary, importSummaryText, importDataText, restoreImportState, stateOptionCount, ' +
-    'wheelMatchesFilter, flowDiagnostics, simulateWheel, buildWheelPack, importWheelPackText, createTemplateWheels, applyWheelTemplate, ' +
-    'exportResultCard, roundResultText, pushUndo, undoLast, profileIndex, switchProfile, addProfile, deleteProfile, ' +
-    'boot, chartColors, gradeValue: (l) => parseGrade(l), continueFlow, chartMidAt, hideToast, ' +
-    'chartDwellSec, drawRadar, startChartAnim, drawDharmaWheel, dharmaWheelCanvas, paletteOf, paletteKeyNow, ' +
-    'fileWheelCountGet: () => fileWheelCount, dirUsableGet: () => dirUsable, bootingGet: () => booting, ' +
-    'parseGrowth, applyGrowth: applyGrowth, growLabel, GRADE_LADDER, GROW_ALIAS, growTargetWheel, ' +
-    'wheelOptions, faceOptions, activeOptions, currentWheel, editFaceIndex, editOpts, findOptionById }));\n';
+  /* 阶段 C 拆分期间保持稳定：每个名字优先取主脚本闭包里的（还没搬走），
+     搬去 js/ 模块后就从 ZW 取 —— typeof 守卫不会对未声明名抛错。 */
+  const G = n => n + ': (typeof ' + n + ' !== "undefined" ? ' + n + ' : ZW.' + n + ')';
+  const NAMES = ['ui','NAV','wheelById','nextOf','chartAfter','chartSlots','chartSlotIndex','flowJump','showChartThen',
+    'showChartForEnd','switchTo','navTo','navBack','navGoBack','navCloseAll','navDepth','isOverlayOpen','topNav',
+    'renderSheet','handleAction','isGradeWheel','parseGrade','chartDims','chartLiveDims','saveRoundChart','resetFlow',
+    'renderFlowBar','draw','layoutSectors','applyGrowth','grownLabel','currentWheel','save','load','normalize',
+    'dimsUpTo','createChartSnapshot','prevChartOf','moveChart','moveWheel','applyWheelFiles','wheelFileText',
+    'indexFileText','wheelFileName','attrCountUpTo','scheduleSync','toast','askDialog','loopDetected','nextInOrderAfter',
+    'storageStatus','storageStatusText','importSummary','importSummaryText','importDataText','restoreImportState',
+    'stateOptionCount','wheelMatchesFilter','flowDiagnostics','simulateWheel','buildWheelPack','importWheelPackText',
+    'createTemplateWheels','applyWheelTemplate','exportResultCard','roundResultText','pushUndo','undoLast',
+    'profileIndex','switchProfile','addProfile','deleteProfile','boot','chartColors','continueFlow','chartMidAt',
+    'hideToast','chartDwellSec','drawRadar','startChartAnim','drawDharmaWheel','dharmaWheelCanvas','parseGrowth',
+    'growLabel','GRADE_LADDER','GROW_ALIAS','growTargetWheel','wheelOptions','faceOptions','activeOptions',
+    'editFaceIndex','editOpts','findOptionById','loadState','cssVar','requestDraw','fitWheel','fmtTime','refreshTitle'];
+  const tail = '\n;(globalThis.__T = Object.assign({}, ZW, {\n' +
+    '  state: () => (typeof state !== "undefined" ? state : ZW.state),\n' +
+    '  spin: (typeof spin !== "undefined" ? spin : ZW.spin),\n' +
+    '  gradeValue: (l) => (typeof parseGrade !== "undefined" ? parseGrade(l) : ZW.parseGrade(l)),\n' +
+    '  fileWheelCountGet: () => (typeof fileWheelCount !== "undefined" ? fileWheelCount : (ZW.fileWheelCountGet ? ZW.fileWheelCountGet() : 0)),\n' +
+    '  dirUsableGet: () => (typeof dirUsable !== "undefined" ? dirUsable : (ZW.dirUsableGet ? ZW.dirUsableGet() : false)),\n' +
+    '  bootingGet: () => (typeof booting !== "undefined" ? booting : (ZW.bootingGet ? ZW.bootingGet() : false)),\n' +
+    '  paletteOf: (typeof paletteOf !== "undefined" ? paletteOf : ZW.paletteOf),\n' +
+    '  paletteKeyNow: (typeof paletteKeyNow !== "undefined" ? paletteKeyNow : ZW.paletteKeyNow),\n' +
+    NAMES.map(G).join(',\n  ') + ' }));\n';
   main = main.replace(/\}\)\(\);\s*$/, tail + '})();');
   if (main.indexOf('__T = ') < 0) throw new Error('导出钩子插入失败（IIFE 结尾没匹配上）');
 
