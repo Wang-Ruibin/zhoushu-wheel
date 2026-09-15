@@ -43,6 +43,28 @@ try {
   else console.log('  ✓ 没有孤立声明块');
 } catch(e) { failed++; console.log('  ✗ ' + e.message); }
 
+/* 2.5 sw.js：语法可解析 + CORE 里的 js 清单和 index.html 的 <script src> 顺序一致
+   （拆分期间曾因追加清单漏逗号导致 service worker 解析失败，测试却全绿——补上这道门） */
+console.log('\n=== sw.js 离线清单 ===');
+try {
+  const sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
+  new vm.Script(sw, { filename: 'sw.js' });
+  const htmlSrc = fs.readFileSync(HTML_PATH, 'utf8');
+  const reTag = /<script\s+src="(js\/[^"]+)"\s*>/g;
+  const inHtml = [];
+  let tm;
+  while ((tm = reTag.exec(htmlSrc))) inHtml.push('./' + tm[1]);
+  const inSw = [];
+  const rePath = /'\.\/js\/[^']+'/g;
+  let sm;
+  while ((sm = rePath.exec(sw))) inSw.push(sm[0].slice(1, -1));
+  const drift = inHtml.filter(p => !inSw.includes(p)).concat(inSw.filter(p => !inHtml.includes(p)));
+  const orderOk = inSw.every(p => inHtml.indexOf(p) >= 0) || inHtml.join() === inSw.join();
+  if (drift.length) { failed++; console.log('  ✗ 清单漂移：' + drift.join(', ')); }
+  else if (!orderOk) { failed++; console.log('  ✗ sw.js 的 js 顺序与 index.html 不一致'); }
+  else console.log('  ✓ 语法 OK，' + inSw.length + ' 个 js 条目与 index.html 同步');
+} catch(e) { failed++; console.log('  ✗ ' + e.message); }
+
 /* 3. 死 action 检查（每个 case 都要有 data-act 入口，反之亦然） */
 console.log('\n=== 死 action 检查 ===');
 try {

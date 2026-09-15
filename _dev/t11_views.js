@@ -116,9 +116,14 @@ const mkOpt = (id, label) => ({ id, label, weight:1, color:null, next:'' });
   /* ---------- 5. 每个 data-act 都真的存在于某个视图里 ---------- */
   console.log('\n[5] 面板里出现的 data-act 都能被 handleAction 处理');
   {
-    /* 抓 t9/actions.js 那套：这里只做"渲染出来的 act 有 case"的子集检查 */
+    /* 抓 t9/actions.js 那套：这里只做"渲染出来的 act 有 case"的子集检查。
+       阶段 C 拆分后 handleAction 的 case 在 js/actions.js 里，业务模块一并扫 */
     const fs = require('fs'), path = require('path');
-    const src = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+    const JS_DIR = path.join(__dirname, '..', 'js');
+    const PLUGIN_SKIP = new Set(['_ns.js','random.js','util.js','core.js','icons.js','sound.js','spin.js','multi.js']);
+    const src = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8') +
+      fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js') && !PLUGIN_SKIP.has(f))
+        .map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
     const cases = new Set();
     let m;
     const r = /\bcase\s+'([A-Za-z0-9_]+)'\s*[:{]/g;
