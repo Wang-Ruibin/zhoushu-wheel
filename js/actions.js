@@ -2,7 +2,7 @@
    （阶段 C 从 index.html 内联脚本拆出；仍是无构建普通 <script>，只经 ZW 命名空间互通） */
 (function(){
 'use strict';
-const { $, $$, CHART_INKS, GRADE_LADDER, NAV, SPIN_FX, STATE_VER, addProfile, applyTheme, applyWheelTemplate, askDialog, beep, canvas, chartDwellSec, chartInkKey, chartPositionText, clamp, clearJump, closeSheet, copyText, createChartSnapshot, ctx, currentWheel, deleteProfile, editOpts, editOptsName, expandFlowBar, exportData, exportResultCard, exportWheelPack, faceCount, faceSource, faceWhenText, findOptionById, fitWheel, hideOverlay, importDataText, importWheelPackText, isGradeWheel, isMultiWheel, isOverlayOpen, loadState, makeOption, makeWheel, moveChart, moveWheel, navBack, navCloseAll, navDepth, navGoBack, navPush, navTo, num, optById, parseBatch, parseReplayCode, pushUndo, randomSeed, refreshOptionProbabilities, refreshTitle, reloadFromFiles, renameProfile, renderFlowBar, renderSheet, replayCode, requestDraw, resetFlow, restoreImportState, resultEl, roundResultText, save, saveSoon, saveToFolder, seed, setRandomSeed, shuffleArr, simulateWheel, slotText, spin, spinFxKey, state, storageStatus, switchProfile, switchTo, toast, topNav, ui, uid, undoLast, undoToast, vibrate, wheelById, wheelInkKey, wheelMatchesFilter, wheelOptions } = ZW;
+const { $, $$, CHART_INKS, core, GRADE_LADDER, NAV, SPIN_FX, STATE_VER, addProfile, applyTheme, applyWheelTemplate, askDialog, beep, canvas, chartDwellSec, chartInkKey, chartPositionText, clamp, clearJump, closeSheet, copyText, createChartSnapshot, ctx, currentWheel, deleteProfile, editOpts, editOptsName, expandFlowBar, exportData, exportResultCard, exportWheelPack, faceCount, faceSource, faceWhenText, findOptionById, fitWheel, hideOverlay, importDataText, importWheelPackText, isGradeWheel, isMultiWheel, isOverlayOpen, loadState, makeOption, makeWheel, moveChart, moveWheel, navBack, navCloseAll, navDepth, navGoBack, navPush, navTo, num, optById, parseBatch, parseReplayCode, pushUndo, randomSeed, refreshOptionProbabilities, refreshTitle, reloadFromFiles, renameProfile, renderFlowBar, renderSheet, replayCode, requestDraw, resetFlow, restoreImportState, resultEl, roundResultText, save, saveSoon, saveToFolder, seed, setRandomSeed, shuffleArr, simulateWheel, slotText, spin, spinFxKey, state, storageStatus, switchProfile, switchTo, toast, topNav, ui, uid, undoLast, undoToast, vibrate, wheelById, wheelInkKey, wheelMatchesFilter, wheelOptions } = ZW;
 
 function dropLayerIf(view){ const t = topNav(); if (t && t.view === view) NAV.stack.pop(); }
 
@@ -605,7 +605,7 @@ function bindEvents(){
   });
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   const openResultActions = () => {
-    if (spinning) return;
+    if (core.spinning) return;
     const t = resultEl.textContent.trim();
     if (!t || t === '？') return;
     clearJump();                                  // 打开结果面板时暂停自动跳转

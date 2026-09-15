@@ -1,8 +1,10 @@
 /* 线上版离线缓存；file:// 模式不会注册。
    ⚠️ CORE 必须和 index.html 的 <script src> 清单同步（js/ 顺序一致），
-      _dev/run.js 会检查两边漂移。 */
+      _dev/run.js 会检查两边漂移。
+   取码策略：同源 GET 一律「网络优先、缓存兜底」——代码更新即时生效，
+   断网时才用预缓存（否则 js 改动必须每次 bump 缓存名，漏一次就 stale）。 */
 'use strict';
-const CACHE = 'zhoushu-wheel-v5';
+const CACHE = 'zhoushu-wheel-v6';
 const CORE = [
   './', './index.html', './app.css', './favicon.svg', './manifest.webmanifest',
   './js/_ns.js', './js/random.js', './js/util.js', './js/core.js', './js/icons.js', './js/sound.js', './js/spin.js', './js/multi.js',
@@ -28,14 +30,7 @@ self.addEventListener('activate', event => {
 });
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
-  const isEntry = new URL(event.request.url).pathname.endsWith('/') || new URL(event.request.url).pathname.endsWith('/index.html');
-  if (isEntry) {
-    event.respondWith(fetch(event.request).then(response => {
-      const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(event.request, copy)); return response;
-    }).catch(() => caches.match(event.request).then(hit => hit || caches.match('./index.html'))));
-    return;
-  }
-  event.respondWith(caches.match(event.request).then(hit => hit || fetch(event.request).then(response => {
+  event.respondWith(fetch(event.request).then(response => {
     const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(event.request, copy)); return response;
-  })));
+  }).catch(() => caches.match(event.request).then(hit => hit || caches.match('./index.html'))));
 });
