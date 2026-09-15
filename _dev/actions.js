@@ -1,10 +1,17 @@
 /* 死 action 检查：handleAction 里的每个 case 都要有 data-act 入口
    （反过来也要查：data-act="x" 必须有对应的 case，否则点了没反应）
+   阶段 C 拆分后 data-act 字符串分布在 index.html 和 js/*.js（视图、流程条）里，都要扫。
    node _dev/actions.js */
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const src = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const JS_DIR = path.join(__dirname, '..', 'js');
+/* 原插件（multi.js 里有条件匹配 switch，case 标签不是 action）不参与 data-act 扫描；
+   阶段 C 拆出的业务模块（flow/views…）里的 data-act 才和 handleAction 对账 */
+const PLUGIN_SKIP = new Set(['_ns.js','random.js','util.js','core.js','icons.js','sound.js','spin.js','multi.js']);
+const src = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8') +
+  fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js') && !PLUGIN_SKIP.has(f))
+    .map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
 
 const cases = new Set();
 /* case 可能写成 fall-through：case 'a': case 'b': { ... }

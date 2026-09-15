@@ -188,11 +188,47 @@ const ROUNDS = {
       ].join('\n'),
       extraExports: ['chartAutoCancel', 'chartManualOpen'] }
   ],
+  3: [
+    { file: 'flow', order: 0,
+      title: '分支流程：跳转、返回栈、循环检测、流程条与体检',
+      names: ['jumpTimer','wait','clearJump','switchTo','resetFlow','flowJump','loopDetected','flowCollapseTimer',
+              'scheduleFlowCollapse','expandFlowBar','renderFlowBar','continueFlow','flowDiagnostics'],
+      /* resultEl 等 DOM 引用在主脚本（R4 拆画布模块）→ ZW.x 运行时访问 */
+      lateBind: { resultEl:'ZW.resultEl' } },
+    { file: 'storage', order: 1,
+      title: '数据进出：JSON/玩法包导入导出、IndexedDB 目录句柄、文件写回',
+      names: ['importRecoveryRaw','exportData','downloadJson','packWheelIds','buildWheelPack','exportWheelPack',
+              'uniqueImportedName','importWheelPackText','roundResultText','wrapCanvasText','downloadCanvasPng',
+              'exportResultCard','stateOptionCount','importSummary','importSummaryText','markStorageFailure',
+              'replaceStateWithRecovery','importDataText','restoreImportState','WHEEL_DIR','FILE_INDEX',
+              'fileWheelCount','dirHandle','dirUsable','booting','registerWheelFile','loadWheelFiles','faceToFile',
+              'applyWheelFiles','optionFileLine','wheelFileText','wheelFileName','indexFileText','downloadText',
+              'idbOpen','idbSet','idbGet','getDir','syncToFolder','syncTimer','scheduleSync','reloadFromFiles',
+              'fileStatusShort','fileStatusText','saveToFolder'],
+      /* state 赋值与 storageErrorShown 已在第 1 轮的全局替换中改为 loadState/storageErrorReset */
+      prelude: [
+        '/* fileWheelCount / dirUsable / booting 是本模块私有；主脚本 init/boot 与测试经这些口子触碰 */',
+        'function setFileWheelCount(n){ fileWheelCount = n; }',
+        'function setDirUsable(v){ dirUsable = !!v; }',
+        'function setBooting(v){ booting = !!v; }',
+        'function fileWheelCountGet(){ return fileWheelCount; }',
+        'function dirUsableGet(){ return dirUsable; }',
+        'function bootingGet(){ return booting; }'
+      ].join('\n'),
+      extraExports: ['setFileWheelCount','setDirUsable','setBooting','fileWheelCountGet','dirUsableGet','bootingGet'] }
+  ],
   /* 主脚本侧逐轮精确替换（搬运后主脚本里残留的跨域引用） */
-  MAIN_REPLACE: { 2: [
-    ['clearTimeout(chartAutoTimer); chartAutoTimer = null;', 'chartManualOpen();'],
-    ['chartFlowDone = null;', '']
-  ] }
+  MAIN_REPLACE: {
+    2: [
+      ['clearTimeout(chartAutoTimer); chartAutoTimer = null;', 'chartManualOpen();'],
+      ['chartFlowDone = null;', '']
+    ],
+    3: [
+      ['booting = false;', 'setBooting(false);'],
+      ['fileWheelCount = defs.length;', 'setFileWheelCount(defs.length);'],
+      ['dirUsable = !!d;', 'setDirUsable(!!d);']
+    ]
+  }
 };
 /* 已存在的 ZW 符号（插件 + 之前轮次模块导出），按轮次累积 */
 function pluginSymbols(){
@@ -366,7 +402,7 @@ const grouped = merged.join(',\n        ');
 mainCode = mainCode.replace(fwdMatch[0], () => 'const { ' + grouped + ' } = ZW;');
 /* 2) 主脚本函数发布到 ZW（供先加载的模块运行时反查）；
       ui/canvas 这类「晚绑定模块要用、但还没搬走的共享对象」也要发布（仍在主脚本时才发） */
-const VAR_PUBLISH = ['ui', 'canvas'];
+const VAR_PUBLISH = ['ui', 'canvas', 'resultEl'];
 const publish = Array.from(mainFns).concat(VAR_PUBLISH.filter(n => mainDecls.has(n))).sort();
 const pubBlock = '\n/* 主脚本仍持有的函数也挂到 ZW：先加载的模块（state/flow/storage…）运行时要反查 */\nObject.assign(ZW, { ' + publish.join(', ') + ' });\n';
 if (mainCode.indexOf('主脚本仍持有的函数也挂到 ZW') >= 0) {

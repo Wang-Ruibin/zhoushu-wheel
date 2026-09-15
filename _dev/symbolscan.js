@@ -30,7 +30,8 @@ const KNOWN_LOCAL = new Set([
   'dur',      // 页面里是 animateSpin 的参数名
   'frame',    // 模块里是递归函数名
   'm', 're', 'id', 'at', 'in', 'set', 'list', 'key', 'top', 'left', 'self', 'name', 'value', 'text', 'src',
-  'g'        // 绘制代码里的局部渐变变量 g，与模块属性 .g 同名（人工确认过）
+  'g',        // 绘制代码里的局部渐变变量 g，与模块属性 .g 同名（人工确认过）
+  'b'         // 循环变量 b，与模块属性 .b 同名（人工确认过）
 ]);
 
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
