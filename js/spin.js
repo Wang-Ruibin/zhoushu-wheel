@@ -21,15 +21,19 @@
 const $ = ZW.$, num = ZW.num, clamp = ZW.clamp, norm = ZW.norm, TAU = ZW.TAU;
 const tickSound = ZW.tickSound, winSound = ZW.winSound, vibrate = ZW.vibrate, audio = ZW.audio;
 const core = ZW.core;
+const random = typeof ZW.random === 'function' ? ZW.random : Math.random;
 /* DOM 引用由主逻辑在 ZW.dom 上挂出来 —— 用取值函数而不是解构，
    因为这个文件加载时主逻辑还没跑（ZW.dom 还不存在）。 */
 const dom = k => (ZW.dom || {})[k];
 const resultEl = () => dom('resultEl');
+const resultLive = () => dom('resultLive');
 const wheelWrap = () => dom('wheelWrap');
 
 /* ---------------- 结果区文字 ---------------- */
 function setResult(text, pop){
   resultEl().textContent = text;
+  resultEl().setAttribute('aria-label', text === '？' ? '当前没有结果' : ('结果：' + text + '。按回车打开结果操作'));
+  if (resultLive()) resultLive().textContent = text === '？' ? '' : ('抽中：' + text);
   resultEl().classList.toggle('small', String(text).length > 7);
   if (pop !== false) {
     resultEl().classList.remove('pop');
@@ -171,10 +175,10 @@ async function spin(){
     setResult('？', false);
   }
 
-  const jitter = (Math.random() * 0.64 - 0.32) * secs[idx].span;
+  const jitter = (random() * 0.64 - 0.32) * secs[idx].span;
   const target = -Math.PI / 2 - secs[idx].start - secs[idx].span / 2 + jitter;
   const from = core.rot;
-  const turns = opts.length === 1 ? 2 : 5 + Math.floor(Math.random() * 3);
+  const turns = opts.length === 1 ? 2 : 5 + Math.floor(random() * 3);
   const to = from + turns * TAU + norm(target - from);
   const dur = (opts.length === 1 ? 1.6 : clamp(num(hooks.config.duration()) || 4.2, 1, 12)) * 1000;
 

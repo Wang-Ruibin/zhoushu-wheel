@@ -25,7 +25,11 @@
 - 🧭 **Attribute radar chart**: morality, cursed energy, physique… grade-wheel results roll up into a radar chart drawn on a **dharma wheel** that clicks 45° every time it appears
 - 🎭 **Multi-face wheels**: one 「声望」(reputation) wheel shows *saintly* EX at high morality — and *baby-silencing* EX at low
 - 📈 **Growth**: event-growth wheels raise grades you've already drawn, and the radar chart follows along
-- 📴 **Fully offline**: copy the folder and it runs anywhere; data lives in your browser with JSON export/import for moving devices
+- 🖼️ **Result card**: export the whole destiny chain + attribute chart as a PNG, ready to share
+- 🎲 **Replayable randomness**: set a seed for reproducible draws, then share a short replay code so friends re-live the exact same run
+- 🧩 **Templates & packs**: start from draw / roll-call / storyline / growth templates; export one wheel or a whole branch as a shareable pack
+- 🌍 **Worldlines**: several independent save slots — run different characters side by side
+- 📴 **Fully offline**: copy the folder and it runs anywhere; data lives in your browser with JSON export/import for moving devices (the hosted version also installs as a PWA)
 - ⌨️ **Accessible**: Space to spin, Esc to pop back, `prefers-reduced-motion` support, live result announcements
 
 ## 🚀 Quick Start
@@ -48,11 +52,14 @@ Every option can set "when picked, go to which wheel": unset options follow the 
 Wheels with grades (E- ~ EX) are auto-detected as attribute wheels; snap a radar chart any time to plot your morality, cursed energy, physique… When the flow passes it, it pops up for a 3-second look. Event-growth wheels raise the grades you've drawn — and the chart grows with them.
 
 ### Make it yours
-Create / duplicate / drag-reorder wheels; bulk-edit options (one per line, `name*weight` for weights); drag to wire branches; "remove after pick" for lucky draws; six palettes + light/dark themes + an independently colorable dharma wheel.
+Create / duplicate / drag-reorder wheels; bulk-edit options (one per line, `name*weight` for weights); drag to wire branches; "remove after pick" for lucky draws; six palettes + light/dark themes + an independently colorable dharma wheel. The wheel list searches by name or option text and filters by category; destructive edits are one tap away from **undo**; the editor shows each option's live probability and can simulate 10,000 local draws; a flow audit flags empty or unreachable wheels in plain language.
+
+### Sharing & replaying
+Turn any run into a **PNG result card** (destiny chain + attribute chart), or copy a **replay code** — with the same wheel data, it replays the exact same draw sequence. Export a single wheel or a whole storyline as a **pack** and drop the file onto another device's import.
 
 ## 📦 Your data stays yours
 
-Everything persists in your browser's localStorage, with **one-click JSON backup** and import for moving devices. Optionally grant the `转盘/` folder and the app **writes your edits back to the data files** — one `.js` per wheel, editable in any text editor, refresh to apply, with the format documented in the files' own comments (it's `.js` rather than `.json` because a local page opened by double-click can't fetch local JSON, but it can load local scripts).
+Everything persists in your browser's localStorage, with **one-click JSON backup** and import for moving devices. **Worldlines** give you several independent save slots — separate wheels, history and growth per character. Optionally grant the `转盘/` folder and the app **writes your edits back to the data files** — one `.js` per wheel, editable in any text editor, refresh to apply, with the format documented in the files' own comments (it's `.js` rather than `.json` because a local page opened by double-click can't fetch local JSON, but it can load local scripts).
 
 <a id="get-involved"></a>
 

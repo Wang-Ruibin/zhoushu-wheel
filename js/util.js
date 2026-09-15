@@ -76,7 +76,8 @@ function textOn(hex){
   return L > 0.66 ? 'rgba(44,40,34,.93)' : '#ffffff';
 }
 function shuffleArr(a){
-  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+  const rand = typeof ZW.random === 'function' ? ZW.random : Math.random;
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
   return a;
 }
 
