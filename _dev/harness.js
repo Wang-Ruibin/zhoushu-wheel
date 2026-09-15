@@ -243,7 +243,7 @@ function makeCtx(){
 
 /* ---------- 按选择器注册的几个关键节点 ---------- */
 function makeDom(custom){
-  const ids = ['wheel','result','wheelWrap','overlay','sheet','flowBar','toast','confirmOverlay',
+  const ids = ['wheel','result','resultLive','wheelWrap','overlay','sheet','flowBar','toast','confirmOverlay',
                'fileImport','btnSwitch','btnPanel','btnEdit','wheelName','cTitle','cDesc','cInput','cCancel','cOk'];
   const byId = {};
   ids.forEach(i => { byId['#' + i] = new El(i === 'wheel' ? 'canvas' : 'div', i); });
@@ -325,6 +325,8 @@ function loadApp(opts){
     document: doc,
     window: null,
     navigator: { vibrate(){}, clipboard:{ writeText: async () => {} }, userAgent:'node' },
+    btoa: s => Buffer.from(String(s), 'binary').toString('base64'),
+    atob: s => Buffer.from(String(s), 'base64').toString('binary'),
     localStorage: {
       getItem: k => (store.has(k) ? store.get(k) : null),
       setItem: (k, v) => {
@@ -388,6 +390,8 @@ function loadApp(opts){
     'normalize, dimsUpTo, createChartSnapshot, prevChartOf, moveChart, moveWheel, applyWheelFiles, wheelFileText, ' +
     'indexFileText, wheelFileName, attrCountUpTo, scheduleSync, toast, askDialog, loopDetected, nextInOrderAfter, ' +
     'storageStatus, storageStatusText, importSummary, importSummaryText, importDataText, restoreImportState, stateOptionCount, ' +
+    'wheelMatchesFilter, flowDiagnostics, simulateWheel, buildWheelPack, importWheelPackText, createTemplateWheels, applyWheelTemplate, ' +
+    'exportResultCard, roundResultText, pushUndo, undoLast, profileIndex, switchProfile, addProfile, deleteProfile, ' +
     'boot, chartColors, gradeValue: (l) => parseGrade(l), continueFlow, chartMidAt, hideToast, ' +
     'chartDwellSec, drawRadar, startChartAnim, drawDharmaWheel, dharmaWheelCanvas, paletteOf, paletteKeyNow, ' +
     'fileWheelCountGet: () => fileWheelCount, dirUsableGet: () => dirUsable, bootingGet: () => booting, ' +

@@ -97,9 +97,9 @@ const snap = T => 'view=' + T.ui.view + ' depth=' + T.navDepth() +
     await app.drainAsync(900);
     ok(T.ui.view === 'chart', '结束时弹出总结图', snap(T));
     await app.drainAsync(3600);
-    ok(T.ui.view === 'none', '3.4 秒后自动收起', snap(T));
+    ok(T.ui.view === 'complete', '3.4 秒后收起维度图并进入完成页', snap(T));
     await app.drainAsync(1000);
-    ok(T.ui.view === 'none', '收起后不再弹（流程已结束）', snap(T));
+    ok(T.ui.view === 'complete', '完成页稳定显示，不会重新弹维度图', snap(T));
   }
 
   console.log('\n通过 ' + pass + ' / 失败 ' + fail);

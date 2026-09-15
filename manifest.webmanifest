@@ -1,0 +1,14 @@
+{
+  "name": "咒术转盘",
+  "short_name": "咒术转盘",
+  "description": "手绘宣纸质感的离线转盘、分支剧情与属性成长工具",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#E9DFC8",
+  "theme_color": "#F3EFE4",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
