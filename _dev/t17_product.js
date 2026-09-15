@@ -96,6 +96,22 @@ const ok = (cond, msg, extra) => {
   const sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
   ok(/location\.protocol !== 'file:'/.test(html) && /caches\.open/.test(sw), 'PWA 仅在线上注册且具备离线缓存');
 
+  console.log('\n[7] 结果区键盘/点击入口（回归：openResultActions 的 spinning 守卫曾引用未声明变量）');
+  const rt = target.T;
+  rt.navCloseAll();
+  rt.ui.resultLabel = '测试结果'; rt.ui.resultOptId = '';
+  const resEl = target.byId['#result'];
+  resEl.textContent = '测试结果';
+  const kd = (resEl.listeners.keydown || [])[0];
+  ok(typeof kd === 'function', '结果区挂了 keydown 监听');
+  if (kd) {
+    try {
+      kd({ key:'Enter', code:'Enter', preventDefault(){}, stopPropagation(){} });
+      ok(rt.ui.view === 'result', 'Enter 能打开结果面板（守卫不再抛 ReferenceError）');
+      rt.navCloseAll();
+    } catch (error) { ok(false, 'Enter 能打开结果面板', error.message); }
+  }
+
   console.log('\n通过 ' + pass + ' / 失败 ' + fail);
   process.exit(fail ? 1 : 0);
 })().catch(error => {
